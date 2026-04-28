@@ -410,7 +410,13 @@ function generatePlatforms() {
 }
 
 function createPlatform(yPos) {
-    const platformType = getRandomPlatformType();
+    // Для первого уровня - только зеленые платформы
+    let platformType;
+    if (currentLevelConfig && currentLevelConfig.id === 1) {
+        platformType = PLATFORM_TYPES.GRASS;
+    } else {
+        platformType = getRandomPlatformType();
+    }
     let p = { 
         x: Math.random() * (canvas.width - 90), 
         y: yPos, 
@@ -824,14 +830,17 @@ function drawGameObjects() {
     for (let p of platforms) {
         const platformType = p.type || PLATFORM_TYPES.GRASS;
         
-        // Основной цвет платформы
+        // Основной цвет платформы с полукруглыми краями
         ctx.fillStyle = platformType.color;
-        ctx.fillRect(p.x, p.y, p.width, p.height);
+        const radius = p.height / 2; // Радиус скругления равен половине высоты
+        ctx.beginPath();
+        ctx.roundRect(p.x, p.y, p.width, p.height, [radius, radius, radius, radius]);
+        ctx.fill();
         
         // Декоративная обводка
         ctx.strokeStyle = 'rgba(0,0,0,0.2)';
         ctx.lineWidth = 2;
-        ctx.strokeRect(p.x, p.y, p.width, p.height);
+        ctx.stroke();
         
         // Если это шипы - рисуем треугольники сверху
         if (platformType.id === 'spikes') {
