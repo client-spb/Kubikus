@@ -186,6 +186,7 @@ const JUMP_FORCE = -13;
 let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, jumping: false };
 let platforms = [];
 let coins = [];
+let animatedCoins = []; // Монеты для анимации полета к счетчику
 let score = 0; // Основной счетчик (монеты или прыжки)
 let gameTime = 0; // Для уровня на время
 let gameRunning = false;
@@ -474,8 +475,8 @@ function drawBackground() {
     const levelId = currentLevelConfig ? currentLevelConfig.id : 1;
     const time = Date.now() * 0.001;
     
-    // Обновляем смещение для параллакса
-    bgOffset += 0.5;
+    // Обновляем смещение для параллакса (теперь зависит от скорости движения платформ)
+    bgOffset += bgParallaxSpeed;
     
     if (levelId === 1) {
         // ===== УРОВЕНЬ 1: ЗЕЛЕНАЯ ПОЛЯНА =====
@@ -506,26 +507,28 @@ function drawBackground() {
             ctx.stroke();
         }
         
-        // Горы на заднем плане (параллакс)
+        // Горы на заднем плане (параллакс - движутся медленно вниз)
         ctx.fillStyle = '#6B8E6B';
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height - 150);
+        const bgMountainOffset = bgOffset * 0.3;
+        ctx.moveTo(0, canvas.height - 150 + bgMountainOffset);
         for (let i = 0; i <= canvas.width; i += 50) {
             const mountainHeight = 80 + Math.sin((i + bgOffset * 0.3) * 0.05) * 40 + Math.sin((i + bgOffset * 0.3) * 0.1) * 20;
-            ctx.lineTo(i, canvas.height - 150 - mountainHeight);
+            ctx.lineTo(i, canvas.height - 150 + bgMountainOffset - mountainHeight);
         }
         ctx.lineTo(canvas.width, canvas.height);
         ctx.lineTo(0, canvas.height);
         ctx.closePath();
         ctx.fill();
         
-        // Горы на переднем плане
+        // Горы на переднем плане (параллакс - движутся быстрее вниз)
         ctx.fillStyle = '#4A6B4A';
         ctx.beginPath();
-        ctx.moveTo(0, canvas.height - 100);
+        const fgMountainOffset = bgOffset * 0.5;
+        ctx.moveTo(0, canvas.height - 100 + fgMountainOffset);
         for (let i = 0; i <= canvas.width; i += 40) {
             const mountainHeight = 50 + Math.sin((i - bgOffset * 0.5) * 0.08) * 25;
-            ctx.lineTo(i, canvas.height - 100 - mountainHeight);
+            ctx.lineTo(i, canvas.height - 100 + fgMountainOffset - mountainHeight);
         }
         ctx.lineTo(canvas.width, canvas.height);
         ctx.lineTo(0, canvas.height);
@@ -539,10 +542,15 @@ function drawBackground() {
         ctx.fillStyle = grassGradient;
         ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
         
-        // Одуванчики
+        // Одуванчики (движутся с учетом параллакса)
         for (let i = 0; i < dandelionPositions.length; i++) {
             const d = dandelionPositions[i];
             const swayOffset = Math.sin(time * 2 + d.sway) * 5;
+            d.y += bgParallaxSpeed * 0.8; // Одуванчики движутся вниз
+            if (d.y > canvas.height + 100) {
+                d.y = -100;
+                d.x = Math.random() * canvas.width;
+            }
             
             // Стебель
             ctx.strokeStyle = '#228B22';
@@ -573,12 +581,16 @@ function drawBackground() {
             }
         }
         
-        // Облака (движутся)
+        // Облака (движутся с учетом параллакса)
         for (let i = 0; i < cloudPositions.length; i++) {
             const c = cloudPositions[i];
             c.x += c.speed;
+            c.y += bgParallaxSpeed * 0.5; // Облака движутся вниз медленнее платформ
             if (c.x > canvas.width + c.size * 2) {
                 c.x = -c.size * 2;
+            }
+            if (c.y > canvas.height + c.size * 2) {
+                c.y = -c.size * 2;
             }
             
             ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
@@ -626,10 +638,10 @@ function drawBackground() {
         ctx.fillStyle = milkyWayGradient;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        // Планеты (движутся)
+        // Планеты (движутся с учетом параллакса)
         for (let i = 0; i < planetPositions.length; i++) {
             const p = planetPositions[i];
-            p.y += p.speed;
+            p.y += p.speed + bgParallaxSpeed * 0.3; // Планеты движутся вниз медленнее платформ
             if (p.y > canvas.height + p.size * 2) {
                 p.y = -p.size * 2;
                 p.x = Math.random() * canvas.width;
@@ -699,7 +711,10 @@ function gameLoop(timestamp) {
     if (player.x > canvas.width) player.x = -player.width;
 
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
-    const moveSpeed = 2.0 * speedMultiplier;
+    const moveSpeed = 1.5 * speedMultiplier; // Скорость движения платформ вниз
+    
+    // Для параллакс-эффекта фон движется медленнее
+    const bgParallaxSpeed = moveSpeed * 0.3;
 
     let onGround = false;
 
@@ -758,6 +773,17 @@ function gameLoop(timestamp) {
             player.x < c.x + c.width && player.x + player.width > c.x &&
             player.y < c.y + c.height && player.y + player.height > c.y) {
             c.collected = true;
+            // Создаем анимированную монету для полета к счетчику
+            const scoreHudRect = scoreElement.getBoundingClientRect();
+            const canvasRect = canvas.getBoundingClientRect();
+            animatedCoins.push({
+                x: c.x,
+                y: c.y,
+                targetX: scoreHudRect.left + scoreHudRect.width / 2 - canvasRect.left,
+                targetY: scoreHudRect.top + scoreHudRect.height / 2 - canvasRect.top,
+                progress: 0,
+                speed: 0.08
+            });
             if (currentLevelConfig.type === 'coins') {
                 score++;
                 updateHUD();
@@ -769,6 +795,20 @@ function gameLoop(timestamp) {
         else {
             c.y += moveSpeed;
             if (c.y > canvas.height) coins.splice(i, 1);
+        }
+    }
+
+    // Обновляем анимированные монеты
+    for (let i = animatedCoins.length - 1; i >= 0; i--) {
+        let ac = animatedCoins[i];
+        ac.progress += ac.speed;
+        if (ac.progress >= 1) {
+            animatedCoins.splice(i, 1);
+        } else {
+            // Плавное движение с ускорением к концу
+            const easeProgress = 1 - Math.pow(1 - ac.progress, 3);
+            ac.x = ac.x + (ac.targetX - ac.x) * ac.speed * (1 - ac.progress);
+            ac.y = ac.y + (ac.targetY - ac.y) * ac.speed * (1 - ac.progress);
         }
     }
 
@@ -826,6 +866,27 @@ function drawGameObjects() {
     for (let c of coins) {
         if(!c.collected) { ctx.beginPath(); ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); ctx.fill(); }
     }
+    
+    // Рисуем анимированные монеты, летящие к счетчику
+    for (let ac of animatedCoins) {
+        ctx.save();
+        ctx.translate(ac.x + 10, ac.y + 10);
+        // Вращение монеты
+        const rotation = Date.now() * 0.01;
+        const scaleX = Math.abs(Math.cos(rotation));
+        ctx.scale(scaleX, 1);
+        ctx.beginPath();
+        ctx.arc(0, 0, 8, 0, Math.PI * 2);
+        ctx.fill();
+        // Блеск на монете
+        ctx.fillStyle = '#FFF';
+        ctx.beginPath();
+        ctx.arc(-2, -2, 3, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = '#FFD700';
+    }
+    
     // Герой
     ctx.fillStyle = '#FF5722';
     ctx.fillRect(player.x, player.y, player.width, player.height);
