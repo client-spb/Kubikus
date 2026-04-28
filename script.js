@@ -1081,6 +1081,10 @@ function gameLoop(timestamp) {
     // Вызываем функцию физики и коллизий
     updatePhysics();
 
+    // Скорость движения для монет и других объектов
+    const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
+    const moveSpeed = 1.5 * speedMultiplier;
+
     // Монетки
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
