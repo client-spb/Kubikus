@@ -567,14 +567,6 @@ function gameLoop(timestamp) {
     if (gameRunning) animationId = requestAnimationFrame(gameLoop);
 }
 
-
-    // Облака теперь нарисованы на фоновом изображении, но добавим еще для глубины
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.beginPath(); ctx.arc(50, 100, 30, 0, Math.PI*2); ctx.arc(90, 100, 40, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(250, 250, 25, 0, Math.PI*2); ctx.arc(290, 250, 35, 0, Math.PI*2); ctx.fill();
-    ctx.beginPath(); ctx.arc(500, 150, 35, 0, Math.PI*2); ctx.arc(545, 150, 45, 0, Math.PI*2); ctx.fill();
-}
-
 function drawGameObjects() {
     // Отрисовка платформ с учетом их типа
     for (let p of platforms) {
@@ -664,5 +656,6 @@ canvas.addEventListener('mousedown', e => {
 });
 canvas.addEventListener('mousemove', e => { if(isTouching) touchX = e.offsetX; });
 canvas.addEventListener('mouseup', () => isTouching = false);
+
 
 
