@@ -958,6 +958,9 @@ function gameLoop(timestamp) {
     bgParallaxSpeed = moveSpeed * 0.3;
 
     player.onGround = false;
+    
+    // Отладочные логи для диагностики прыжков
+    const debugLogs = [];
 
     for (let p of platforms) {
         p.y += moveSpeed;
@@ -970,17 +973,20 @@ function gameLoop(timestamp) {
         // Проверка столкновения с платформой
         const playerBottom = player.y + player.height;
         const platformTop = p.y;
+        const prevBottom = prevPlayerY + player.height;
         
-        // Игрок должен падать вниз (или быть на нулевой скорости)
-        // И пересекать платформу по горизонтали с отступами
-        // И его низ должен быть на уровне или ниже верха платформы
-        // А предыдущая позиция должна быть выше платформы
-        if (player.vy >= 0 &&
-            player.x + player.width > p.x + 5 &&
-            player.x < p.x + p.width - 5 &&
-            playerBottom >= platformTop &&
-            playerBottom <= platformTop + 25 &&
-            prevPlayerY + player.height <= platformTop + 15) {
+        // Упрощенная и надежная проверка приземления:
+        // 1. Игрок падал вниз или имел нулевую скорость (vy >= 0)
+        // 2. Есть перекрытие по горизонтали (с небольшим отступом)
+        // 3. Низ игрока сейчас на уровне или ниже верха платформы
+        // 4. В предыдущем кадре игрок был выше платформы (или на её уровне)
+        const horizontalOverlap = (player.x + player.width > p.x + 5) && (player.x < p.x + p.width - 5);
+        const fallingOrStill = player.vy >= 0;
+        const bottomAtOrBelowTop = playerBottom >= platformTop;
+        const wasAboveOrAtTop = prevBottom <= platformTop + 20;
+        
+        if (fallingOrStill && horizontalOverlap && bottomAtOrBelowTop && wasAboveOrAtTop) {
+            debugLogs.push(`COLLISION: vy=${player.vy.toFixed(2)}, prevBottom=${prevBottom.toFixed(1)}, platformTop=${platformTop.toFixed(1)}`);
 
             // Проверка на шипы - мгновенная смерть
             if (p.type && p.type.damage) {
@@ -994,6 +1000,8 @@ function gameLoop(timestamp) {
 
             // Воспроизводим звук приземления (тихий)
             playSound('land');
+            
+            debugLogs.push(`LANDED on platform ${p.id}`);
 
             // Логика для уровня "Прыжки" (Тип 3)
             // Считаем только новые платформы
@@ -1004,6 +1012,8 @@ function gameLoop(timestamp) {
                 checkWinCondition();
             }
         }
+        
+        // Респаун платформ, ушедших за экран
         if (p.y > canvas.height) {
             p.y = -20;
             p.x = Math.random() * (canvas.width - p.width);
@@ -1017,6 +1027,12 @@ function gameLoop(timestamp) {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
         }
+    }
+    
+    // Вывод отладочных логов в консоль
+    if (debugLogs.length > 0) {
+        console.log(`[Frame ${performance.now().toFixed(0)}] onGround=${player.onGround}, vy=${player.vy.toFixed(2)}`);
+        debugLogs.forEach(log => console.log(`  ${log}`));
     }
 
     // Монетки
