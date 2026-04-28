@@ -440,6 +440,7 @@ const FRUIT_CONVERSION_THRESHOLD = 10; // Количество фруктов д
 let collectedFruitsCount = 0;          // Счётчик собранных фруктов
 let isConvertingFruits = false;        // Флаг активной конвертации
 let collectedFruitsArray = [];         // Массив собранных фруктов для отображения в HUD
+let persistentCollectedFruits = [];    // Фрукты, сохраняемые между уровнями
 
 // ==================== ТИПЫ ФРУКТОВ ====================
 // Разные фрукты дают разное количество очков и имеют разные визуальные эффекты
@@ -510,6 +511,8 @@ function convertFruitsToCoins() {
     // Сбрасываем счётчик после небольшой задержки (когда анимация завершится)
     setTimeout(() => {
         collectedFruitsCount = 0;
+        // Сохраняем фрукты в постоянный массив перед очисткой временного
+        persistentCollectedFruits = [...collectedFruitsArray];
         collectedFruitsArray = []; // Очищаем массив собранных фруктов
         isConvertingFruits = false;
         updateHUD();
@@ -645,8 +648,8 @@ function updatePhysics() {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
             
-            // С шансом 20% создаём фрукт рядом с платформой (только если платформа не шипы)
-            if (Math.random() < 0.2 && !newPlatformType.damage) {
+            // С шансом 35% создаём фрукт рядом с платформой (только если платформа не шипы) - увеличено количество
+            if (Math.random() < 0.35 && !newPlatformType.damage) {
                 const fruitType = getRandomFruitType();
                 fruits.push({ 
                     x: p.x + p.width/2 - 12, 
@@ -690,6 +693,9 @@ function showLevelSelect() {
     gameOverScreen.classList.add('hidden');
     levelPreviewScreen.classList.add('hidden');
     levelSelectScreen.classList.remove('hidden');
+    
+    // При выходе на карту уровней очищаем фрукты (только если не победа)
+    // Фрукты уже сохранены в persistentCollectedFruits при победе или очищены при проигрыше
     renderLevels();
 }
 
@@ -767,7 +773,8 @@ function startGame(config) {
     // Инициализируем элементы фона при старте игры
     initBackgroundElements();
 
-    resetGameVariables();
+    // При старте уровня передаём false, чтобы сохранить фрукты с предыдущего уровня (если была победа)
+    resetGameVariables(false);
     landedPlatforms.clear(); // Очищаем набор приземлившихся платформ
     gameRunning = true;
     lastTime = performance.now();
@@ -840,6 +847,9 @@ function finishLevel(success) {
             maxUnlockedLevel++;
             localStorage.setItem('jumpSkok_maxLevel', maxUnlockedLevel);
         }
+        
+        // Сохраняем собранные фрукты для следующего уровня
+        persistentCollectedFruits = [...collectedFruitsArray];
     } else {
         playTone('die');
         endStatus.textContent = "НЕУДАЧА";
@@ -854,6 +864,10 @@ function finishLevel(success) {
         } else {
              finalScoreValue.textContent = (scorePoints + fruitScore) + " очков";
         }
+        
+        // При проигрыше очищаем все фрукты
+        persistentCollectedFruits = [];
+        collectedFruitsArray = [];
     }
 
     setTimeout(() => {
@@ -861,7 +875,9 @@ function finishLevel(success) {
     }, 500);
 }
 
-function resetGameVariables() {
+// Глобальная переменная уже объявлена выше (строка 443)
+
+function resetGameVariables(clearFruits = true) {
     player.x = canvas.width / 2 - 15;
     // Герой появляется в самом верху экрана
     player.y = 50;
@@ -878,7 +894,16 @@ function resetGameVariables() {
     collectedFruitsCount = 0;
     isConvertingFruits = false;
     comboDisplay = { active: false, timer: 0, value: 0 };
-    collectedFruitsArray = []; // Очищаем массив собранных фруктов для отображения
+    
+    // Очищаем или сохраняем фрукты в зависимости от параметра
+    if (clearFruits) {
+        collectedFruitsArray = []; // Очищаем массив собранных фруктов для отображения
+        persistentCollectedFruits = []; // Очищаем сохранённые фрукты (при проигрыше)
+    } else {
+        // При переходе на следующий уровень сохраняем фрукты
+        collectedFruitsArray = [...persistentCollectedFruits];
+    }
+    
     generatePlatforms();
     updateHUD();
     updateFruitsDisplay();
