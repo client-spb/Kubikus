@@ -4,12 +4,17 @@
 <meta charset="UTF-8">
 <title>Прыг-Скок: Уровни</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
 <style>
+    * {
+        box-sizing: border-box;
+    }
+    
     body {
         margin: 0;
         overflow: hidden;
-        background: #222;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+        font-family: 'Nunito', sans-serif;
         touch-action: none;
         display: flex;
         justify-content: center;
@@ -21,19 +26,19 @@
     
     #game-container {
         position: relative;
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        border-radius: 12px;
+        box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+        border-radius: 20px;
         overflow: hidden;
         width: 100%;
         max-width: 400px; 
         height: 100%;
         max-height: 700px;
-        background: #333;
+        background: linear-gradient(180deg, #2d3436 0%, #1a1a2e 100%);
     }
 
     canvas {
         display: block;
-        background: linear-gradient(to bottom, #87CEEB, #E0F7FA);
+        background: linear-gradient(to bottom, #667eea 0%, #764ba2 50%, #f093fb 100%);
         width: 100%;
         height: 100%;
         image-rendering: pixelated;
@@ -43,19 +48,22 @@
     #score-hud {
         position: absolute;
         top: 15px;
-        left: 15px;
-        color: #333;
-        font-size: 20px;
-        font-weight: bold;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #fff;
+        font-size: 18px;
+        font-weight: 800;
         z-index: 10;
-        background: rgba(255, 255, 255, 0.9);
-        padding: 8px 15px;
-        border-radius: 20px;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.95), rgba(118, 75, 162, 0.95));
+        padding: 10px 25px;
+        border-radius: 25px;
         pointer-events: none;
         display: none;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-        min-width: 150px;
-        text-align: center;
+        box-shadow: 0 8px 32px rgba(102, 126, 234, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(255,255,255,0.2);
+        letter-spacing: 0.5px;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
 
     .screen {
@@ -64,62 +72,160 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        backdrop-filter: blur(5px);
+        background: linear-gradient(135deg, rgba(26, 26, 46, 0.95), rgba(15, 52, 96, 0.9));
+        backdrop-filter: blur(10px);
         display: flex;
         flex-direction: column;
         justify-content: center;
         align-items: center;
         z-index: 100;
-        transition: opacity 0.3s ease;
+        transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     }
 
     .hidden { display: none !important; opacity: 0; }
 
     .menu-panel {
-        background: white;
-        padding: 25px 20px;
-        border-radius: 25px;
+        background: linear-gradient(145deg, #ffffff 0%, #f8f9fa 100%);
+        padding: 30px 25px;
+        border-radius: 30px;
         text-align: center;
-        box-shadow: 0 15px 35px rgba(0,0,0,0.4);
+        box-shadow: 0 25px 50px rgba(0,0,0,0.3), 0 0 0 1px rgba(255,255,255,0.5);
         width: 90%;
-        max-width: 340px;
-        animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        max-width: 350px;
+        animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
+        overflow: hidden;
+    }
+    
+    .menu-panel::before {
+        content: '';
+        position: absolute;
+        top: -50%;
+        left: -50%;
+        width: 200%;
+        height: 200%;
+        background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+        animation: shimmer 3s infinite;
+    }
+    
+    @keyframes shimmer {
+        0%, 100% { transform: translate(0, 0); }
+        50% { transform: translate(-20%, -20%); }
     }
 
     @keyframes popIn {
-        from { transform: scale(0.8); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+        from { transform: scale(0.7) translateY(20px); opacity: 0; }
+        to { transform: scale(1) translateY(0); opacity: 1; }
+    }
+    
+    @keyframes float {
+        0%, 100% { transform: translateY(0); }
+        50% { transform: translateY(-10px); }
     }
 
     .game-title {
-        font-size: 32px;
-        margin: 0 0 20px 0;
-        background: linear-gradient(45deg, #FF5722, #FFC107);
+        font-size: 38px;
+        margin: 0 0 25px 0;
+        background: linear-gradient(135deg, #ff6b6b 0%, #feca57 50%, #ff6b6b 100%);
+        background-size: 200% auto;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        background-clip: text;
         text-transform: uppercase;
         font-weight: 900;
+        animation: gradientShift 3s ease infinite;
+        filter: drop-shadow(0 4px 8px rgba(255, 107, 107, 0.3));
+        position: relative;
+        z-index: 1;
+    }
+    
+    @keyframes gradientShift {
+        0%, 100% { background-position: 0% center; }
+        50% { background-position: 100% center; }
     }
 
     .menu-btn {
         display: block;
         width: 100%;
-        padding: 12px 0;
-        margin: 8px 0;
+        padding: 14px 0;
+        margin: 10px 0;
         border: none;
-        border-radius: 12px;
-        font-size: 16px;
-        font-weight: bold;
+        border-radius: 16px;
+        font-size: 17px;
+        font-weight: 800;
         cursor: pointer;
-        transition: transform 0.1s;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
         color: white;
+        position: relative;
+        overflow: hidden;
+        z-index: 1;
+        font-family: 'Nunito', sans-serif;
+        text-transform: uppercase;
+        letter-spacing: 1px;
     }
-    .menu-btn:active { transform: scale(0.96); }
-    .btn-play { background: linear-gradient(45deg, #4CAF50, #8BC34A); font-size: 20px; }
-    .btn-secondary { background: linear-gradient(45deg, #2196F3, #64B5F6); }
-    .btn-back { background: #777; margin-top: 15px; }
-    .btn-start-lvl { background: linear-gradient(45deg, #FF9800, #FFC107); color: #333; font-size: 18px; }
+    
+    .menu-btn::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
+        opacity: 0;
+        transition: opacity 0.3s;
+        z-index: -1;
+    }
+    
+    .menu-btn:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+    }
+    
+    .menu-btn:hover::before {
+        opacity: 1;
+    }
+    
+    .menu-btn:active { 
+        transform: translateY(0) scale(0.98); 
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .btn-play { 
+        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+        font-size: 20px;
+        box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+    }
+    
+    .btn-play:hover {
+        box-shadow: 0 12px 35px rgba(0, 184, 148, 0.5);
+    }
+    
+    .btn-secondary { 
+        background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+        box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+    }
+    
+    .btn-secondary:hover {
+        box-shadow: 0 12px 35px rgba(108, 92, 231, 0.5);
+    }
+    
+    .btn-back { 
+        background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
+        margin-top: 15px;
+        box-shadow: 0 6px 20px rgba(99, 110, 114, 0.3);
+    }
+    
+    .btn-start-lvl { 
+        background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+        color: #2d3436;
+        font-size: 19px;
+        box-shadow: 0 8px 25px rgba(253, 203, 110, 0.4);
+    }
+    
+    .btn-start-lvl:hover {
+        box-shadow: 0 12px 35px rgba(253, 203, 110, 0.5);
+    }
 
     /* Сетка уровней */
     #levels-grid {
@@ -134,60 +240,259 @@
 
     .level-node {
         aspect-ratio: 1;
-        background: #4CAF50;
-        border-radius: 12px;
+        background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
+        border-radius: 16px;
         display: flex;
         justify-content: center;
         align-items: center;
         font-size: 20px;
-        font-weight: bold;
+        font-weight: 800;
         color: white;
         cursor: pointer;
         position: relative;
-        box-shadow: 0 4px 0 #388E3C;
-        transition: transform 0.1s;
+        box-shadow: 0 6px 0 #009174, 0 10px 20px rgba(0, 184, 148, 0.3);
+        transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+        overflow: hidden;
     }
-    .level-node:active { transform: translateY(4px); box-shadow: none; }
+    
+    .level-node::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: -100%;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
+        transition: left 0.5s;
+    }
+    
+    .level-node:hover::after {
+        left: 100%;
+    }
+    
+    .level-node:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 0 #009174, 0 15px 30px rgba(0, 184, 148, 0.4);
+    }
+    
+    .level-node:active { 
+        transform: translateY(4px); 
+        box-shadow: 0 2px 0 #009174, 0 5px 10px rgba(0, 184, 148, 0.3);
+    }
     
     .level-node.locked {
-        background: #cfd8dc;
-        box-shadow: 0 4px 0 #b0bec5;
+        background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
+        box-shadow: 0 6px 0 #2d3436, 0 10px 20px rgba(99, 110, 114, 0.3);
         cursor: not-allowed;
     }
-    .level-node.locked::after { content: "🔒"; font-size: 20px; filter: grayscale(1); opacity: 0.6; }
     
-    .level-node.completed { background: #FFC107; box-shadow: 0 4px 0 #FFA000; }
-    .level-node.completed::before { content: "★"; position: absolute; top: 2px; right: 4px; font-size: 10px; color: #fff; }
+    .level-node.locked::after { 
+        content: "🔒"; 
+        font-size: 22px; 
+        filter: grayscale(1);
+        opacity: 0.7;
+    }
+    
+    .level-node.locked:hover {
+        transform: none;
+        box-shadow: 0 6px 0 #2d3436, 0 10px 20px rgba(99, 110, 114, 0.3);
+    }
+    
+    .level-node.completed { 
+        background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+        box-shadow: 0 6px 0 #e17055, 0 10px 20px rgba(253, 203, 110, 0.3);
+    }
+    
+    .level-node.completed::before { 
+        content: "★"; 
+        position: absolute; 
+        top: 4px; 
+        right: 6px; 
+        font-size: 12px; 
+        color: #fff;
+        text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+    
+    .level-node.completed:hover {
+        box-shadow: 0 10px 0 #e17055, 0 15px 30px rgba(253, 203, 110, 0.4);
+    }
 
     /* Превью уровня */
     .preview-icon {
-        font-size: 60px;
-        margin: 10px 0;
+        font-size: 70px;
+        margin: 15px 0;
         display: block;
+        animation: float 2s ease-in-out infinite;
+        filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
     }
+    
     .level-desc {
         font-size: 16px;
         color: #555;
         margin-bottom: 20px;
-        line-height: 1.4;
+        line-height: 1.6;
+        font-weight: 600;
     }
+    
     .level-difficulty {
-        font-size: 12px;
-        color: #999;
+        font-size: 13px;
+        color: #888;
         margin-bottom: 15px;
         text-transform: uppercase;
-        letter-spacing: 1px;
+        letter-spacing: 2px;
+        font-weight: 700;
     }
 
     /* Game Over */
-    .final-score { font-size: 48px; font-weight: bold; color: #333; margin: 10px 0; }
-    .status-msg { font-size: 16px; font-weight: bold; margin-bottom: 15px; min-height: 24px; }
-    .status-success { color: #4CAF50; }
-    .status-fail { color: #F44336; }
+    .final-score { 
+        font-size: 52px; 
+        font-weight: 900; 
+        color: #2d3436; 
+        margin: 15px 0;
+        background: linear-gradient(135deg, #6c5ce7, #a29bfe);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
+        filter: drop-shadow(0 4px 8px rgba(108, 92, 231, 0.3));
+    }
+    
+    .status-msg { 
+        font-size: 17px; 
+        font-weight: 800; 
+        margin-bottom: 15px; 
+        min-height: 24px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+    }
+    
+    .status-success { 
+        color: #00b894;
+        text-shadow: 0 2px 4px rgba(0, 184, 148, 0.3);
+    }
+    
+    .status-fail { 
+        color: #e17055;
+        text-shadow: 0 2px 4px rgba(225, 112, 85, 0.3);
+    }
+    
+    /* Анимированный фон с облаками */
+    .cloud-bg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        z-index: 0;
+        pointer-events: none;
+    }
+    
+    .cloud {
+        position: absolute;
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        filter: blur(20px);
+        animation: cloudFloat 20s infinite;
+    }
+    
+    .cloud:nth-child(1) {
+        width: 200px;
+        height: 200px;
+        top: 10%;
+        left: -10%;
+        animation-delay: 0s;
+        animation-duration: 25s;
+    }
+    
+    .cloud:nth-child(2) {
+        width: 150px;
+        height: 150px;
+        top: 60%;
+        right: -5%;
+        animation-delay: -10s;
+        animation-duration: 30s;
+    }
+    
+    .cloud:nth-child(3) {
+        width: 100px;
+        height: 100px;
+        top: 30%;
+        right: 20%;
+        animation-delay: -5s;
+        animation-duration: 20s;
+    }
+    
+    @keyframes cloudFloat {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        33% { transform: translate(30px, -20px) rotate(5deg); }
+        66% { transform: translate(-20px, 30px) rotate(-5deg); }
+    }
+    
+    /* Декоративные элементы */
+    .deco-circle {
+        position: absolute;
+        border-radius: 50%;
+        background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
+        animation: pulse 4s ease-in-out infinite;
+    }
+    
+    .deco-circle:nth-child(4) {
+        width: 300px;
+        height: 300px;
+        top: -150px;
+        right: -150px;
+    }
+    
+    .deco-circle:nth-child(5) {
+        width: 200px;
+        height: 200px;
+        bottom: -100px;
+        left: -100px;
+        animation-delay: -2s;
+    }
+    
+    @keyframes pulse {
+        0%, 100% { transform: scale(1); opacity: 0.5; }
+        50% { transform: scale(1.1); opacity: 0.8; }
+    }
+    
+    /* Заголовок карты миров */
+    .world-map-title {
+        color: #fff;
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+        text-shadow: 0 4px 8px rgba(0,0,0,0.3);
+        position: relative;
+        z-index: 1;
+    }
+    
+    .world-map-title::after {
+        content: '';
+        position: absolute;
+        bottom: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        width: 60px;
+        height: 3px;
+        background: linear-gradient(90deg, transparent, #feca57, transparent);
+        border-radius: 2px;
+    }
 
 </style>
 </head>
 <body>
+
+<!-- Декоративный фон -->
+<div class="cloud-bg">
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="deco-circle"></div>
+    <div class="deco-circle"></div>
+</div>
 
 <div id="game-container">
     <div id="score-hud">Цель: 0/20</div>
@@ -197,41 +502,41 @@
     <div id="mainMenu" class="screen">
         <div class="menu-panel">
             <h1 class="game-title">ПРЫГ-СКОК</h1>
-            <button class="menu-btn btn-play" onclick="showLevelSelect()">ИГРАТЬ</button>
-            <button class="menu-btn btn-secondary" onclick="alert('В разработке')">РЕЙТИНГ</button>
+            <button class="menu-btn btn-play" onclick="showLevelSelect()">🎮 ИГРАТЬ</button>
+            <button class="menu-btn btn-secondary" onclick="alert('В разработке')">🏆 РЕЙТИНГ</button>
         </div>
     </div>
 
     <!-- ВЫБОР УРОВНЯ -->
     <div id="levelSelect" class="screen hidden">
-        <div style="color:white; margin-bottom:15px; font-size:20px; font-weight:bold;">КАРТА МИРОВ</div>
+        <div class="world-map-title">КАРТА МИРОВ</div>
         <div id="levels-grid"></div>
-        <button class="menu-btn btn-back" style="width: 200px;" onclick="toMainMenu()">НАЗАД</button>
+        <button class="menu-btn btn-back" style="width: 200px;" onclick="toMainMenu()">⬅ НАЗАД</button>
     </div>
 
     <!-- ПРЕВЬЮ УРОВНЯ -->
     <div id="levelPreview" class="screen hidden">
         <div class="menu-panel">
-            <h2 id="prevTitle" style="margin:0; color:#333;">Уровень 1</h2>
+            <h2 id="prevTitle" style="margin:0; color:#333; font-weight:900;">Уровень 1</h2>
             <div id="prevIcon" class="preview-icon">🪙</div>
-            <div class="level-difficulty">Сложность: <span id="prevDiff">Легко</span></div>
+            <div class="level-difficulty">⭐ Сложность: <span id="prevDiff">Легко</span></div>
             <div id="prevDesc" class="level-desc">Описание...</div>
             
-            <button class="menu-btn btn-start-lvl" onclick="confirmStartLevel()">НАЧАТЬ</button>
-            <button class="menu-btn btn-back" onclick="backToGrid()">ОТМЕНА</button>
+            <button class="menu-btn btn-start-lvl" onclick="confirmStartLevel()">▶ НАЧАТЬ</button>
+            <button class="menu-btn btn-back" onclick="backToGrid()">✕ ОТМЕНА</button>
         </div>
     </div>
 
     <!-- GAME OVER -->
     <div id="gameOverScreen" class="screen hidden">
         <div class="menu-panel">
-            <h1 class="game-title" style="font-size: 28px; color: #FF5722;">ФИНИШ</h1>
+            <h1 class="game-title" style="font-size: 28px;">🎯 ФИНИШ</h1>
             <div id="endStatus" class="status-msg">Результат</div>
             <div class="final-score" id="finalScoreValue">0</div>
             
-            <button class="menu-btn btn-play" onclick="restartLevel()">ЗАНОВО</button>
-            <button class="menu-btn btn-secondary" onclick="showLevelSelect()">К КАРТЕ</button>
-            <button class="menu-btn btn-back" onclick="toMainMenu()">МЕНЮ</button>
+            <button class="menu-btn btn-play" onclick="restartLevel()">🔄 ЗАНОВО</button>
+            <button class="menu-btn btn-secondary" onclick="showLevelSelect()">🗺 К КАРТЕ</button>
+            <button class="menu-btn btn-back" onclick="toMainMenu()">🏠 МЕНЮ</button>
         </div>
     </div>
 </div>
