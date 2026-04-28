@@ -286,7 +286,7 @@ function toMainMenu() {
     mainMenu.classList.remove('hidden');
     scoreElement.style.display = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawClouds();
+    drawBackground();
 }
 
 function checkWinCondition() {
@@ -424,206 +424,42 @@ function createPlatform(yPos) {
 let lastJumpState = false;
 let landedPlatforms = new Set(); // Для отслеживания уникальных платформ
 
-// Загрузка фонового изображения
-const backgroundImage = new Image();
-backgroundImage.src = 'assets/background.svg';
-let backgroundLoaded = false;
-let castleOffsetY = 0; // Смещение замка для эффекта подъема
-
-backgroundImage.onload = () => {
-    backgroundLoaded = true;
-};
-
 function drawBackground() {
-    if (backgroundLoaded) {
-        // Рисуем небо (статичное)
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, '#87CEEB');
-        gradient.addColorStop(1, '#E0F7FA');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // Рисуем красивый градиентный фон
+    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+    gradient.addColorStop(0, '#a8edea');
+    gradient.addColorStop(0.5, '#fed6e3');
+    gradient.addColorStop(1, '#ffecd2');
+    ctx.fillStyle = gradient;
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // Движущиеся частицы на фоне
+    const time = Date.now() * 0.001;
+    for (let i = 0; i < 5; i++) {
+        const x = (Math.sin(time * 0.5 + i) * 0.5 + 0.5) * canvas.width;
+        const y = (Math.cos(time * 0.3 + i * 1.5) * 0.5 + 0.5) * canvas.height;
+        const radius = 30 + Math.sin(time + i) * 10;
         
-        // Рисуем замок с эффектом параллакса (движется медленно вниз при подъеме игрока)
-        ctx.save();
-        ctx.translate(0, castleOffsetY % 400); // Зацикливаем движение
-        
-        // Рисуем замок из SVG вручную (так как мы не можем двигать части SVG отдельно)
-        // Основной корпус
-        ctx.fillStyle = '#D3D3D3';
-        ctx.strokeStyle = '#A9A9A9';
-        ctx.lineWidth = 2;
-        ctx.fillRect(100, 200, 200, 400);
-        ctx.strokeRect(100, 200, 200, 400);
-        
-        // Башни
-        ctx.fillStyle = '#C0C0C0';
-        ctx.fillRect(80, 250, 60, 350);
-        ctx.strokeRect(80, 250, 60, 350);
-        ctx.fillRect(260, 250, 60, 350);
-        ctx.strokeRect(260, 250, 60, 350);
-        ctx.fillStyle = '#D3D3D3';
-        ctx.fillRect(170, 150, 60, 450);
-        ctx.strokeRect(170, 150, 60, 450);
-        
-        // Крыши башен
-        ctx.fillStyle = '#FF6B6B';
-        ctx.strokeStyle = '#C92A2A';
+        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - i * 0.05})`;
         ctx.beginPath();
-        ctx.moveTo(70, 250);
-        ctx.lineTo(110, 200);
-        ctx.lineTo(150, 250);
-        ctx.closePath();
+        ctx.arc(x, y, radius, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
+    }
+    
+    // Размытые формы на заднем плане
+    for (let i = 0; i < 3; i++) {
+        const shapeX = (Math.sin(time * 0.2 + i * 2) * 0.5 + 0.5) * canvas.width;
+        const shapeY = (Math.cos(time * 0.25 + i) * 0.5 + 0.5) * canvas.height;
+        const shapeSize = 80 + Math.sin(time * 0.5 + i) * 20;
         
+        const shapeGradient = ctx.createRadialGradient(shapeX, shapeY, 0, shapeX, shapeY, shapeSize);
+        shapeGradient.addColorStop(0, 'rgba(255, 107, 107, 0.15)');
+        shapeGradient.addColorStop(1, 'rgba(254, 202, 87, 0)');
+        
+        ctx.fillStyle = shapeGradient;
         ctx.beginPath();
-        ctx.moveTo(250, 250);
-        ctx.lineTo(290, 200);
-        ctx.lineTo(330, 250);
-        ctx.closePath();
+        ctx.arc(shapeX, shapeY, shapeSize, 0, Math.PI * 2);
         ctx.fill();
-        ctx.stroke();
-        
-        ctx.beginPath();
-        ctx.moveTo(160, 150);
-        ctx.lineTo(200, 100);
-        ctx.lineTo(240, 150);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        // Флаги
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(110, 200);
-        ctx.lineTo(110, 170);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.moveTo(110, 170);
-        ctx.lineTo(140, 185);
-        ctx.lineTo(110, 200);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.strokeStyle = '#555';
-        ctx.beginPath();
-        ctx.moveTo(290, 200);
-        ctx.lineTo(290, 170);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.moveTo(290, 170);
-        ctx.lineTo(320, 185);
-        ctx.lineTo(290, 200);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.strokeStyle = '#555';
-        ctx.beginPath();
-        ctx.moveTo(200, 100);
-        ctx.lineTo(200, 60);
-        ctx.stroke();
-        
-        ctx.fillStyle = '#FFD700';
-        ctx.beginPath();
-        ctx.moveTo(200, 60);
-        ctx.lineTo(230, 75);
-        ctx.lineTo(200, 90);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Окна
-        ctx.fillStyle = '#87CEEB';
-        ctx.strokeStyle = '#555';
-        ctx.lineWidth = 1;
-        ctx.fillRect(110, 300, 20, 30);
-        ctx.strokeRect(110, 300, 20, 30);
-        ctx.fillRect(270, 300, 20, 30);
-        ctx.strokeRect(270, 300, 20, 30);
-        ctx.fillRect(185, 250, 30, 40);
-        ctx.strokeRect(185, 250, 30, 40);
-        ctx.fillRect(110, 400, 20, 30);
-        ctx.strokeRect(110, 400, 20, 30);
-        ctx.fillRect(270, 400, 20, 30);
-        ctx.strokeRect(270, 400, 20, 30);
-        ctx.fillRect(185, 350, 30, 40);
-        ctx.strokeRect(185, 350, 30, 40);
-        
-        // Ворота
-        ctx.fillStyle = '#5D4037';
-        ctx.strokeStyle = '#3E2723';
-        ctx.lineWidth = 2;
-        ctx.beginPath();
-        ctx.moveTo(170, 600);
-        ctx.lineTo(170, 500);
-        ctx.quadraticCurveTo(200, 480, 230, 500);
-        ctx.lineTo(230, 600);
-        ctx.closePath();
-        ctx.fill();
-        ctx.stroke();
-        
-        ctx.restore();
-        
-        // Рисуем холмы (передний план, движется быстрее замка но медленнее платформ)
-        const hillOffset = (castleOffsetY * 0.5) % 200;
-        ctx.fillStyle = 'rgba(144, 238, 144, 0.8)';
-        ctx.beginPath();
-        ctx.moveTo(0, 500 + hillOffset);
-        ctx.quadraticCurveTo(100, 450 + hillOffset, 200, 500 + hillOffset);
-        ctx.quadraticCurveTo(300, 550 + hillOffset, 400, 500 + hillOffset);
-        ctx.lineTo(400, 600);
-        ctx.lineTo(0, 600);
-        ctx.closePath();
-        ctx.fill();
-        
-        ctx.fillStyle = 'rgba(50, 205, 50, 0.6)';
-        ctx.beginPath();
-        ctx.moveTo(0, 520 + hillOffset * 0.8);
-        ctx.quadraticCurveTo(150, 480 + hillOffset * 0.8, 300, 520 + hillOffset * 0.8);
-        ctx.quadraticCurveTo(350, 540 + hillOffset * 0.8, 400, 510 + hillOffset * 0.8);
-        ctx.lineTo(400, 600);
-        ctx.lineTo(0, 600);
-        ctx.closePath();
-        ctx.fill();
-        
-        // Солнце
-        const sunPulse = Math.sin(Date.now() / 500) * 2;
-        ctx.filter = 'blur(2.5px)';
-        ctx.fillStyle = 'rgba(255, 215, 0, 0.9)';
-        ctx.beginPath();
-        ctx.arc(320, 80, 40 + sunPulse, 0, Math.PI * 2);
-        ctx.fill();
-        ctx.filter = 'none';
-        
-        // Облака
-        ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-        // Облако 1
-        ctx.beginPath();
-        ctx.arc(50, 100, 20, 0, Math.PI * 2);
-        ctx.arc(70, 90, 25, 0, Math.PI * 2);
-        ctx.arc(90, 100, 20, 0, Math.PI * 2);
-        ctx.rect(50, 100, 60, 20);
-        ctx.fill();
-        
-        // Облако 2
-        ctx.beginPath();
-        ctx.arc(250, 150, 15, 0, Math.PI * 2);
-        ctx.arc(270, 140, 20, 0, Math.PI * 2);
-        ctx.arc(290, 150, 15, 0, Math.PI * 2);
-        ctx.rect(250, 150, 50, 15);
-        ctx.fill();
-    } else {
-        // Резервный градиент, если картинка еще не загрузилась
-        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-        gradient.addColorStop(0, '#4FC3F7');
-        gradient.addColorStop(0.5, '#B3E5FC');
-        gradient.addColorStop(1, '#E1F5FE');
-        ctx.fillStyle = gradient;
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
     }
 }
 
@@ -653,9 +489,6 @@ function gameLoop(timestamp) {
 
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
     const moveSpeed = 2.0 * speedMultiplier;
-    
-    // Обновляем смещение замка для эффекта подъема (замок движется медленнее платформ)
-    castleOffsetY += moveSpeed * 0.3;
 
     let onGround = false;
 
@@ -735,7 +568,6 @@ function gameLoop(timestamp) {
 }
 
 
-function drawClouds() {
     // Облака теперь нарисованы на фоновом изображении, но добавим еще для глубины
     ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.beginPath(); ctx.arc(50, 100, 30, 0, Math.PI*2); ctx.arc(90, 100, 40, 0, Math.PI*2); ctx.fill();
@@ -833,5 +665,4 @@ canvas.addEventListener('mousedown', e => {
 canvas.addEventListener('mousemove', e => { if(isTouching) touchX = e.offsetX; });
 canvas.addEventListener('mouseup', () => isTouching = false);
 
-drawClouds();
 
