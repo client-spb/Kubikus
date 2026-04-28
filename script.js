@@ -402,11 +402,33 @@ function createPlatform(yPos) {
 let lastJumpState = false;
 let landedPlatforms = new Set(); // Для отслеживания уникальных платформ
 
+// Загрузка фонового изображения
+const backgroundImage = new Image();
+backgroundImage.src = 'assets/background.svg';
+let backgroundLoaded = false;
+backgroundImage.onload = () => {
+    backgroundLoaded = true;
+};
+
+function drawBackground() {
+    if (backgroundLoaded) {
+        ctx.drawImage(backgroundImage, 0, 0, canvas.width, canvas.height);
+    } else {
+        // Резервный градиент, если картинка еще не загрузилась
+        const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        gradient.addColorStop(0, '#4FC3F7');
+        gradient.addColorStop(0.5, '#B3E5FC');
+        gradient.addColorStop(1, '#E1F5FE');
+        ctx.fillStyle = gradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    }
+}
+
 function gameLoop(timestamp) {
     if (!gameRunning) return;
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawClouds();
+    drawBackground();
 
     if (currentLevelConfig.type === 'time') {
         gameTime += (timestamp - lastTime) / 1000;
@@ -508,9 +530,11 @@ function gameLoop(timestamp) {
 
 
 function drawClouds() {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    // Облака теперь нарисованы на фоновом изображении, но добавим еще для глубины
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
     ctx.beginPath(); ctx.arc(50, 100, 30, 0, Math.PI*2); ctx.arc(90, 100, 40, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(250, 250, 25, 0, Math.PI*2); ctx.arc(290, 250, 35, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); ctx.arc(500, 150, 35, 0, Math.PI*2); ctx.arc(545, 150, 45, 0, Math.PI*2); ctx.fill();
 }
 
 function drawGameObjects() {
