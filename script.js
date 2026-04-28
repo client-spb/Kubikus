@@ -119,11 +119,10 @@ let currentLevelConfig = null;
 
 // ==================== АУДИО СИСТЕМА ====================
 // Используем Web Audio API для качественных синтезированных звуков
-// и фоновой музыки
+// и фоновой музыки из файла
 
 let audioCtx = null;
-let bgmSource = null;
-let bgmGain = null;
+let bgmAudio = null;
 let isBgmPlaying = false;
 
 // Инициализация аудио контекста
@@ -330,82 +329,31 @@ function playLandSound() {
 }
 
 // ==================== ФОНОВАЯ МУЗЫКА ====================
-
-// Простая мелодия в стиле 8-бит
-function createBGMMelody() {
-    if (!audioCtx) return null;
-    
-    const melody = [
-        // Мелодия в тональности C мажор
-        { freq: 523.25, dur: 0.2 }, // C5
-        { freq: 587.33, dur: 0.2 },  // D5
-        { freq: 659.25, dur: 0.2 },  // E5
-        { freq: 523.25, dur: 0.2 },  // C5
-        { freq: 659.25, dur: 0.3 },  // E5
-        { freq: 587.33, dur: 0.2 },  // D5
-        { freq: 523.25, dur: 0.2 },  // C5
-        { freq: 440.00, dur: 0.4 },  // A4
-        { freq: 493.88, dur: 0.2 },  // B4
-        { freq: 523.25, dur: 0.2 },  // C5
-        { freq: 587.33, dur: 0.2 },  // D5
-        { freq: 523.25, dur: 0.3 },  // C5
-        { freq: 440.00, dur: 0.2 },  // A4
-        { freq: 392.00, dur: 0.2 },  // G4
-        { freq: 392.00, dur: 0.2 },  // G4
-        { freq: 440.00, dur: 0.4 },  // A4
-    ];
-    
-    return melody;
-}
+// Используем аудиофайл background.mp3 из папки assets/audio/
 
 function startBGM() {
-    if (!bgmEnabled || !audioCtx || isBgmPlaying) return;
+    if (!bgmEnabled || isBgmPlaying) return;
     
-    isBgmPlaying = true;
-    bgmGain = audioCtx.createGain();
-    bgmGain.connect(audioCtx.destination);
-    bgmGain.gain.value = 0.15; // Тихая громкость для фона
+    // Создаем HTML5 Audio элемент для фоновой музыки
+    bgmAudio = new Audio('assets/audio/background.mp3');
+    bgmAudio.loop = true;
+    bgmAudio.volume = 0.3; // Тихая громкость для фона (30%)
     
-    const melody = createBGMMelody();
-    let currentTime = audioCtx.currentTime;
-    const loopDuration = melody.reduce((sum, note) => sum + note.dur, 0);
-    
-    function playLoop() {
-        if (!isBgmPlaying || !bgmEnabled) return;
-        
-        melody.forEach(note => {
-            const oscillator = audioCtx.createOscillator();
-            const gainNode = audioCtx.createGain();
-            
-            oscillator.connect(gainNode);
-            gainNode.connect(bgmGain);
-            
-            oscillator.type = 'square';
-            oscillator.frequency.value = note.freq;
-            
-            gainNode.gain.setValueAtTime(0, currentTime);
-            gainNode.gain.linearRampToValueAtTime(0.1, currentTime + 0.02);
-            gainNode.gain.setValueAtTime(0.1, currentTime + note.dur - 0.02);
-            gainNode.gain.linearRampToValueAtTime(0, currentTime + note.dur);
-            
-            oscillator.start(currentTime);
-            oscillator.stop(currentTime + note.dur);
-            
-            currentTime += note.dur;
-        });
-        
-        // Зацикливание
-        setTimeout(playLoop, loopDuration * 1000);
-    }
-    
-    playLoop();
+    // Запускаем музыку
+    bgmAudio.play().then(() => {
+        isBgmPlaying = true;
+    }).catch(error => {
+        console.log('Не удалось воспроизвести фоновую музыку:', error);
+        isBgmPlaying = false;
+    });
 }
 
 function stopBGM() {
     isBgmPlaying = false;
-    if (bgmGain) {
-        bgmGain.disconnect();
-        bgmGain = null;
+    if (bgmAudio) {
+        bgmAudio.pause();
+        bgmAudio.currentTime = 0;
+        bgmAudio = null;
     }
 }
 
@@ -579,6 +527,9 @@ function checkWinCondition() {
 function finishLevel(success) {
     gameRunning = false;
     cancelAnimationFrame(animationId);
+    
+    // Останавливаем музыку при завершении уровня (победа или поражение)
+    stopBGM();
 
     if (success) {
         playTone('win');
