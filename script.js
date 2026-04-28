@@ -608,21 +608,25 @@ function generatePlatforms() {
     platforms = [];
     coins = [];
     // Стартовая платформа всегда безопасная (трава)
+    const startY = 500;
     platforms.push({ 
         x: 150, 
-        y: 500, 
+        y: startY, 
         width: 100, 
         height: 15,
         type: PLATFORM_TYPES.GRASS
     });
     // Для первого уровня создаём меньше платформ
     const platformCount = currentLevelConfig && currentLevelConfig.id === 1 ? 5 : 7;
+    let lastY = startY;
     for (let i = 1; i <= platformCount; i++) {
-        createPlatform(i * 90);
+        const yPos = lastY - 90; // Фиксированный шаг вниз
+        createPlatform(yPos, lastY);
+        lastY = platforms[platforms.length - 1].y; // Обновляем lastY с учетом корректировки
     }
 }
 
-function createPlatform(yPos) {
+function createPlatform(yPos, previousY) {
     // Для первого уровня - только зеленые платформы
     let platformType;
     if (currentLevelConfig && currentLevelConfig.id === 1) {
@@ -630,9 +634,19 @@ function createPlatform(yPos) {
     } else {
         platformType = getRandomPlatformType();
     }
+    
+    // Ограничиваем максимальное вертикальное расстояние
+    // Максимальная высота прыжка: (13^2) / (2 * 0.6) ≈ 141 пиксель
+    // Делаем с запасом - не более 100 пикселей между платформами
+    const maxVerticalGap = 100;
+    let actualY = yPos;
+    if (previousY !== undefined && (previousY - yPos) > maxVerticalGap) {
+        actualY = previousY - maxVerticalGap;
+    }
+    
     let p = { 
         x: Math.random() * (canvas.width - 90), 
-        y: yPos, 
+        y: actualY, 
         width: 80 + Math.random() * 30, 
         height: 15,
         type: platformType
