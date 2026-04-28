@@ -961,11 +961,17 @@ function gameLoop(timestamp) {
             p.id = Math.random().toString(36).substr(2, 9);
         }
         
-        if (player.vy > 0 &&
-            player.x + player.width > p.x &&
-            player.x < p.x + p.width &&
-            player.y + player.height > p.y &&
-            player.y + player.height - player.vy <= p.y + 10) {
+        // Проверка столкновения с платформой
+        const playerBottom = player.y + player.height;
+        const playerPrevBottom = playerBottom - player.vy;
+        const platformTop = p.y;
+        
+        if (player.vy >= 0 &&
+            player.x + player.width > p.x + 5 &&
+            player.x < p.x + p.width - 5 &&
+            playerBottom >= platformTop &&
+            playerBottom <= platformTop + 20 &&
+            playerPrevBottom <= platformTop + 10) {
 
             // Проверка на шипы - мгновенная смерть
             if (p.type && p.type.damage) {
