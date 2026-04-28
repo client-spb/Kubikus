@@ -551,8 +551,8 @@ function finishLevel(success) {
 
 function resetGameVariables() {
     player.x = canvas.width / 2 - 15;
-    // Герой появляется в самом верху, на стартовой платформе
-    player.y = 480; // Чуть выше стартовой платформы (y=500)
+    // Герой появляется в самом верху экрана
+    player.y = 50;
     player.vy = 0;
     score = 0;
     gameTime = 0;
