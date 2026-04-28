@@ -591,3 +591,12 @@ canvas {
 .sound-btn.muted:hover {
     box-shadow: 0 10px 30px rgba(99, 110, 114, 0.6);
 }
+
+/* Элементы собранных фруктов в HUD */
+.fruit-item {
+    font-size: 18px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    padding: 2px 0;
+}

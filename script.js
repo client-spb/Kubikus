@@ -510,8 +510,10 @@ function convertFruitsToCoins() {
     // Сбрасываем счётчик после небольшой задержки (когда анимация завершится)
     setTimeout(() => {
         collectedFruitsCount = 0;
+        collectedFruitsArray = []; // Очищаем массив собранных фруктов
         isConvertingFruits = false;
         updateHUD();
+        updateFruitsDisplay(); // Обновляем отображение фруктов
     }, 2000);
 }
 
@@ -920,6 +922,37 @@ function updateHUD() {
     if (coinsCountElement && currencyDisplay) {
         coinsCountElement.textContent = coinsCount;
         currencyDisplay.style.display = 'block';
+    }
+}
+
+// Функция добавления собранного фрукта в массив для отображения
+function addCollectedFruit(fruitType) {
+    collectedFruitsArray.push(fruitType);
+    updateFruitsDisplay();
+}
+
+// Функция обновления отображения собранных фруктов внизу слева
+function updateFruitsDisplay() {
+    if (!fruitsList) return;
+    
+    // Очищаем текущий список
+    fruitsList.innerHTML = '';
+    
+    // Подсчитываем количество каждого типа фруктов
+    const fruitCounts = {};
+    collectedFruitsArray.forEach(fruit => {
+        if (!fruitCounts[fruit.icon]) {
+            fruitCounts[fruit.icon] = 0;
+        }
+        fruitCounts[fruit.icon]++;
+    });
+    
+    // Отображаем каждый тип фрукта с количеством в столбик
+    for (const [icon, count] of Object.entries(fruitCounts)) {
+        const fruitItem = document.createElement('div');
+        fruitItem.className = 'fruit-item';
+        fruitItem.textContent = `${icon} ${count}`;
+        fruitsList.appendChild(fruitItem);
     }
 }
 
