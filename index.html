@@ -9,7 +9,7 @@
     * {
         box-sizing: border-box;
     }
-    
+
     body {
         margin: 0;
         overflow: hidden;
@@ -23,14 +23,14 @@
         user-select: none;
         -webkit-user-select: none;
     }
-    
+
     #game-container {
         position: relative;
         box-shadow: 0 25px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
         border-radius: 20px;
         overflow: hidden;
         width: 100%;
-        max-width: 400px; 
+        max-width: 400px;
         height: 100%;
         max-height: 700px;
         background: linear-gradient(180deg, #2d3436 0%, #1a1a2e 100%);
@@ -96,7 +96,7 @@
         position: relative;
         overflow: hidden;
     }
-    
+
     .menu-panel::before {
         content: '';
         position: absolute;
@@ -107,7 +107,7 @@
         background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
         animation: shimmer 3s infinite;
     }
-    
+
     @keyframes shimmer {
         0%, 100% { transform: translate(0, 0); }
         50% { transform: translate(-20%, -20%); }
@@ -117,7 +117,7 @@
         from { transform: scale(0.7) translateY(20px); opacity: 0; }
         to { transform: scale(1) translateY(0); opacity: 1; }
     }
-    
+
     @keyframes float {
         0%, 100% { transform: translateY(0); }
         50% { transform: translateY(-10px); }
@@ -138,7 +138,7 @@
         position: relative;
         z-index: 1;
     }
-    
+
     @keyframes gradientShift {
         0%, 100% { background-position: 0% center; }
         50% { background-position: 100% center; }
@@ -163,7 +163,7 @@
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
+
     .menu-btn::before {
         content: '';
         position: absolute;
@@ -176,53 +176,53 @@
         transition: opacity 0.3s;
         z-index: -1;
     }
-    
+
     .menu-btn:hover {
         transform: translateY(-3px);
         box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     }
-    
+
     .menu-btn:hover::before {
         opacity: 1;
     }
-    
-    .menu-btn:active { 
-        transform: translateY(0) scale(0.98); 
+
+    .menu-btn:active {
+        transform: translateY(0) scale(0.98);
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
     }
-    
-    .btn-play { 
+
+    .btn-play {
         background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
         font-size: 20px;
         box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
     }
-    
+
     .btn-play:hover {
         box-shadow: 0 12px 35px rgba(0, 184, 148, 0.5);
     }
-    
-    .btn-secondary { 
+
+    .btn-secondary {
         background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
         box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
     }
-    
+
     .btn-secondary:hover {
         box-shadow: 0 12px 35px rgba(108, 92, 231, 0.5);
     }
-    
-    .btn-back { 
+
+    .btn-back {
         background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
         margin-top: 15px;
         box-shadow: 0 6px 20px rgba(99, 110, 114, 0.3);
     }
-    
-    .btn-start-lvl { 
+
+    .btn-start-lvl {
         background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
         color: #2d3436;
         font-size: 19px;
         box-shadow: 0 8px 25px rgba(253, 203, 110, 0.4);
     }
-    
+
     .btn-start-lvl:hover {
         box-shadow: 0 12px 35px rgba(253, 203, 110, 0.5);
     }
@@ -254,7 +254,7 @@
         transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
         overflow: hidden;
     }
-    
+
     .level-node::after {
         content: '';
         position: absolute;
@@ -265,54 +265,54 @@
         background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3), transparent);
         transition: left 0.5s;
     }
-    
+
     .level-node:hover::after {
         left: 100%;
     }
-    
+
     .level-node:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 0 #009174, 0 15px 30px rgba(0, 184, 148, 0.4);
     }
-    
-    .level-node:active { 
-        transform: translateY(4px); 
+
+    .level-node:active {
+        transform: translateY(4px);
         box-shadow: 0 2px 0 #009174, 0 5px 10px rgba(0, 184, 148, 0.3);
     }
-    
+
     .level-node.locked {
         background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
         box-shadow: 0 6px 0 #2d3436, 0 10px 20px rgba(99, 110, 114, 0.3);
         cursor: not-allowed;
     }
-    
-    .level-node.locked::after { 
-        content: "🔒"; 
-        font-size: 22px; 
+
+    .level-node.locked::after {
+        content: "🔒";
+        font-size: 22px;
         filter: grayscale(1);
         opacity: 0.7;
     }
-    
+
     .level-node.locked:hover {
         transform: none;
         box-shadow: 0 6px 0 #2d3436, 0 10px 20px rgba(99, 110, 114, 0.3);
     }
-    
-    .level-node.completed { 
+
+    .level-node.completed {
         background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
         box-shadow: 0 6px 0 #e17055, 0 10px 20px rgba(253, 203, 110, 0.3);
     }
-    
-    .level-node.completed::before { 
-        content: "★"; 
-        position: absolute; 
-        top: 4px; 
-        right: 6px; 
-        font-size: 12px; 
+
+    .level-node.completed::before {
+        content: "★";
+        position: absolute;
+        top: 4px;
+        right: 6px;
+        font-size: 12px;
         color: #fff;
         text-shadow: 0 2px 4px rgba(0,0,0,0.3);
     }
-    
+
     .level-node.completed:hover {
         box-shadow: 0 10px 0 #e17055, 0 15px 30px rgba(253, 203, 110, 0.4);
     }
@@ -325,7 +325,7 @@
         animation: float 2s ease-in-out infinite;
         filter: drop-shadow(0 8px 16px rgba(0,0,0,0.2));
     }
-    
+
     .level-desc {
         font-size: 16px;
         color: #555;
@@ -333,7 +333,7 @@
         line-height: 1.6;
         font-weight: 600;
     }
-    
+
     .level-difficulty {
         font-size: 13px;
         color: #888;
@@ -344,10 +344,10 @@
     }
 
     /* Game Over */
-    .final-score { 
-        font-size: 52px; 
-        font-weight: 900; 
-        color: #2d3436; 
+    .final-score {
+        font-size: 52px;
+        font-weight: 900;
+        color: #2d3436;
         margin: 15px 0;
         background: linear-gradient(135deg, #6c5ce7, #a29bfe);
         -webkit-background-clip: text;
@@ -355,26 +355,26 @@
         background-clip: text;
         filter: drop-shadow(0 4px 8px rgba(108, 92, 231, 0.3));
     }
-    
-    .status-msg { 
-        font-size: 17px; 
-        font-weight: 800; 
-        margin-bottom: 15px; 
+
+    .status-msg {
+        font-size: 17px;
+        font-weight: 800;
+        margin-bottom: 15px;
         min-height: 24px;
         text-transform: uppercase;
         letter-spacing: 1px;
     }
-    
-    .status-success { 
+
+    .status-success {
         color: #00b894;
         text-shadow: 0 2px 4px rgba(0, 184, 148, 0.3);
     }
-    
-    .status-fail { 
+
+    .status-fail {
         color: #e17055;
         text-shadow: 0 2px 4px rgba(225, 112, 85, 0.3);
     }
-    
+
     /* Анимированный фон с облаками */
     .cloud-bg {
         position: absolute;
@@ -386,7 +386,7 @@
         z-index: 0;
         pointer-events: none;
     }
-    
+
     .cloud {
         position: absolute;
         background: rgba(255, 255, 255, 0.1);
@@ -394,7 +394,7 @@
         filter: blur(20px);
         animation: cloudFloat 20s infinite;
     }
-    
+
     .cloud:nth-child(1) {
         width: 200px;
         height: 200px;
@@ -403,7 +403,7 @@
         animation-delay: 0s;
         animation-duration: 25s;
     }
-    
+
     .cloud:nth-child(2) {
         width: 150px;
         height: 150px;
@@ -412,7 +412,7 @@
         animation-delay: -10s;
         animation-duration: 30s;
     }
-    
+
     .cloud:nth-child(3) {
         width: 100px;
         height: 100px;
@@ -421,13 +421,13 @@
         animation-delay: -5s;
         animation-duration: 20s;
     }
-    
+
     @keyframes cloudFloat {
         0%, 100% { transform: translate(0, 0) rotate(0deg); }
         33% { transform: translate(30px, -20px) rotate(5deg); }
         66% { transform: translate(-20px, 30px) rotate(-5deg); }
     }
-    
+
     /* Декоративные элементы */
     .deco-circle {
         position: absolute;
@@ -435,14 +435,14 @@
         background: linear-gradient(135deg, rgba(102, 126, 234, 0.3), rgba(118, 75, 162, 0.3));
         animation: pulse 4s ease-in-out infinite;
     }
-    
+
     .deco-circle:nth-child(4) {
         width: 300px;
         height: 300px;
         top: -150px;
         right: -150px;
     }
-    
+
     .deco-circle:nth-child(5) {
         width: 200px;
         height: 200px;
@@ -450,12 +450,12 @@
         left: -100px;
         animation-delay: -2s;
     }
-    
+
     @keyframes pulse {
         0%, 100% { transform: scale(1); opacity: 0.5; }
         50% { transform: scale(1.1); opacity: 0.8; }
     }
-    
+
     /* Заголовок карты миров */
     .world-map-title {
         color: #fff;
@@ -468,7 +468,7 @@
         position: relative;
         z-index: 1;
     }
-    
+
     .world-map-title::after {
         content: '';
         position: absolute;
@@ -521,7 +521,7 @@
             <div id="prevIcon" class="preview-icon">🪙</div>
             <div class="level-difficulty">⭐ Сложность: <span id="prevDiff">Легко</span></div>
             <div id="prevDesc" class="level-desc">Описание...</div>
-            
+
             <button class="menu-btn btn-start-lvl" onclick="confirmStartLevel()">▶ НАЧАТЬ</button>
             <button class="menu-btn btn-back" onclick="backToGrid()">✕ ОТМЕНА</button>
         </div>
@@ -533,7 +533,7 @@
             <h1 class="game-title" style="font-size: 28px;">🎯 ФИНИШ</h1>
             <div id="endStatus" class="status-msg">Результат</div>
             <div class="final-score" id="finalScoreValue">0</div>
-            
+
             <button class="menu-btn btn-play" onclick="restartLevel()">🔄 ЗАНОВО</button>
             <button class="menu-btn btn-secondary" onclick="showLevelSelect()">🗺 К КАРТЕ</button>
             <button class="menu-btn btn-back" onclick="toMainMenu()">🏠 МЕНЮ</button>
@@ -672,7 +672,7 @@ function renderLevels() {
     for (let i = 1; i <= TOTAL_LEVELS; i++) {
         const btn = document.createElement('div');
         btn.className = 'level-node';
-        
+
         // Проверяем, есть ли конфиг для этого уровня (для отображения звезды)
         const config = LEVELS_CONFIG.find(l => l.id === i);
         const isConfigured = !!config;
@@ -681,10 +681,10 @@ function renderLevels() {
             btn.classList.add('locked');
         } else {
             btn.textContent = i;
-            if (i < maxUnlockedLevel || (isConfigured && i === maxUnlockedLevel && false)) { 
+            if (i < maxUnlockedLevel || (isConfigured && i === maxUnlockedLevel && false)) {
                 // Звездочка только если строго меньше (пройден ранее)
                 // Или можно хранить массив пройденных, но пока упростим:
-                // Если уровень открыт, значит мы его хотя бы начали. 
+                // Если уровень открыт, значит мы его хотя бы начали.
                 // Для простоты: звезда если < maxUnlocked
                 btn.classList.add('completed');
             }
@@ -729,7 +729,7 @@ function confirmStartLevel() {
 function startGame(config) {
     currentLevelConfig = config;
     scoreElement.style.display = 'block';
-    
+
     resetGameVariables();
     gameRunning = true;
     lastTime = performance.now();
@@ -753,12 +753,12 @@ function toMainMenu() {
 
 function checkWinCondition() {
     if (!currentLevelConfig) return false;
-    
+
     let won = false;
     if (currentLevelConfig.type === 'coins' && score >= currentLevelConfig.target) won = true;
     if (currentLevelConfig.type === 'jumps' && score >= currentLevelConfig.target) won = true;
     if (currentLevelConfig.type === 'time' && gameTime >= currentLevelConfig.target) won = true;
-    
+
     if (won) {
         finishLevel(true);
     }
@@ -767,13 +767,13 @@ function checkWinCondition() {
 function finishLevel(success) {
     gameRunning = false;
     cancelAnimationFrame(animationId);
-    
+
     if (success) {
         playTone('win');
         endStatus.textContent = "УРОВЕНЬ ПРОЙДЕН!";
         endStatus.className = "status-msg status-success";
         finalScoreValue.textContent = currentLevelConfig.icon; // Показываем иконку вместо очков
-        
+
         // Открываем следующий уровень
         if (selectedLevelId === maxUnlockedLevel && maxUnlockedLevel < TOTAL_LEVELS) {
             maxUnlockedLevel++;
@@ -808,7 +808,7 @@ function resetGameVariables() {
 
 function updateHUD() {
     if (!currentLevelConfig) return;
-    
+
     let text = "";
     if (currentLevelConfig.type === 'coins') {
         text = `🪙 ${score} / ${currentLevelConfig.target}`;
@@ -841,7 +841,7 @@ function createPlatform(yPos) {
 
 function gameLoop(timestamp) {
     if (!gameRunning) return;
-    
+
     const dt = (timestamp - lastTime) / 1000;
     lastTime = timestamp;
 
@@ -874,18 +874,18 @@ function gameLoop(timestamp) {
 
     for (let p of platforms) {
         p.y += moveSpeed;
-        
+
         // Столкновение
         if (player.vy > 0 &&
             player.x + player.width > p.x &&
             player.x < p.x + p.width &&
             player.y + player.height > p.y &&
             player.y + player.height - player.vy <= p.y + 10) {
-            
+
             player.y = p.y - player.height;
             player.vy = 0;
             player.jumping = false;
-            
+
             // Логика подсчета прыжков для уровня 3
             // Чтобы не спамить счет, можно добавить флаг, но для простоты считаем каждое касание после падения
             // Лучше считать момент отрыва, но тут сделаем просто: коснулся = +1 (с задержкой или флагом)
@@ -897,10 +897,10 @@ function gameLoop(timestamp) {
             p.y = -20;
             p.x = Math.random() * (canvas.width - p.width);
             p.width = 80 + Math.random() * 30;
-            
-            // Для уровня "Прыжки": новая платформа = потенциальный прыжок. 
+
+            // Для уровня "Прыжки": новая платформа = потенциальный прыжок.
             // Но лучше считать в момент прыжка.
-            
+
             if (Math.random() < 0.5) {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
@@ -913,7 +913,7 @@ function gameLoop(timestamp) {
         if (!c.collected &&
             player.x < c.x + c.width && player.x + player.width > c.x &&
             player.y < c.y + c.height && player.y + player.height > c.y) {
-            
+
             c.collected = true;
             if (currentLevelConfig.type === 'coins') {
                 score++;
@@ -933,19 +933,19 @@ function gameLoop(timestamp) {
     // Реализуем простую логику: если мы не прыгаем, а потом прыгаем - это прыжок
     // Но так как управление автоматическое при таче, сложнее.
     // Давайте считать так: если игрок был на платформе (vy==0), а стал падать или прыгать - это событие.
-    // Для надежности в этом коде: просто увеличиваем счетчик, когда игрок касается платформы, 
+    // Для надежности в этом коде: просто увеличиваем счетчик, когда игрок касается платформы,
     // но с кулдауном.
-    
+
     // Упрощение для уровня 3: Просто считаем очки как обычно, но цель 50.
     // Если тип 'jumps', будем давать +1 за каждую новую платформу, на которую прыгнули.
-    
+
     // Проверка смерти
     if (player.y > canvas.height) {
         finishLevel(false);
     }
 
     drawGameObjects();
-    
+
     // Специальная отрисовка для уровня 3 (платформы быстрее)
     // Уже учтено в speedMultiplier
 
@@ -982,7 +982,7 @@ function gameLoop(timestamp) {
 
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
     const moveSpeed = 2.0 * speedMultiplier;
-    
+
     let onGround = false;
 
     for (let p of platforms) {
@@ -992,15 +992,15 @@ function gameLoop(timestamp) {
             player.x < p.x + p.width &&
             player.y + player.height > p.y &&
             player.y + player.height - player.vy <= p.y + 10) {
-            
+
             player.y = p.y - player.height;
             player.vy = 0;
             onGround = true;
-            
+
             // Логика для уровня "Прыжки" (Тип 3)
             // Если мы только что приземлились, а до этого были в воздухе
             if (currentLevelConfig.type === 'jumps' && !lastJumpState) {
-                 // Это не совсем прыжок, это приземление. 
+                 // Это не совсем прыжок, это приземление.
                  // Но для геймплея сойдет как "преодоление платформы"
             }
         }
@@ -1012,7 +1012,7 @@ function gameLoop(timestamp) {
             }
         }
     }
-    
+
     // Детекция прыжка для счета (Уровень 3)
     // Если были на земле, а стали в воздухе
     if (currentLevelConfig.type === 'jumps') {
@@ -1023,9 +1023,9 @@ function gameLoop(timestamp) {
         }
         // Для простоты реализации в рамках одного файла:
         // Будем считать очки за "высоту" или просто время, но замаскируем под прыжки?
-        // Нет, давайте честно: +1 когда игрок отпускает экран после прыжка? 
+        // Нет, давайте честно: +1 когда игрок отпускает экран после прыжка?
         // Давайте проще: +1 за каждый цикл, пока игрок в воздухе? Нет.
-        
+
         // Решение: В этом коде для уровня 3 будем считать +1 за каждое касание платформы,
         // но только если это новая платформа.
         // Так как платформы респаунятся, сложно отследить.
@@ -1126,5 +1126,77 @@ canvas.addEventListener('mouseup', () => isTouching = false);
 
 drawClouds();
 </script>
+</body>
+</html>
+
++++ index.html (修改后)
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Прыг-Скок: Уровни</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- Декоративный фон -->
+<div class="cloud-bg">
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="cloud"></div>
+    <div class="deco-circle"></div>
+    <div class="deco-circle"></div>
+</div>
+
+<div id="game-container">
+    <div id="score-hud">Цель: 0/20</div>
+    <canvas id="game" width="400" height="600"></canvas>
+
+    <!-- ГЛАВНОЕ МЕНЮ -->
+    <div id="mainMenu" class="screen">
+        <div class="menu-panel">
+            <h1 class="game-title">ПРЫГ-СКОК</h1>
+            <button class="menu-btn btn-play" onclick="showLevelSelect()">🎮 ИГРАТЬ</button>
+            <button class="menu-btn btn-secondary" onclick="alert('В разработке')">🏆 РЕЙТИНГ</button>
+        </div>
+    </div>
+
+    <!-- ВЫБОР УРОВНЯ -->
+    <div id="levelSelect" class="screen hidden">
+        <div class="world-map-title">КАРТА МИРОВ</div>
+        <div id="levels-grid"></div>
+        <button class="menu-btn btn-back" style="width: 200px;" onclick="toMainMenu()">⬅ НАЗАД</button>
+    </div>
+
+    <!-- ПРЕВЬЮ УРОВНЯ -->
+    <div id="levelPreview" class="screen hidden">
+        <div class="menu-panel">
+            <h2 id="prevTitle" style="margin:0; color:#333; font-weight:900;">Уровень 1</h2>
+            <div id="prevIcon" class="preview-icon">🪙</div>
+            <div class="level-difficulty">⭐ Сложность: <span id="prevDiff">Легко</span></div>
+            <div id="prevDesc" class="level-desc">Описание...</div>
+
+            <button class="menu-btn btn-start-lvl" onclick="confirmStartLevel()">▶ НАЧАТЬ</button>
+            <button class="menu-btn btn-back" onclick="backToGrid()">✕ ОТМЕНА</button>
+        </div>
+    </div>
+
+    <!-- GAME OVER -->
+    <div id="gameOverScreen" class="screen hidden">
+        <div class="menu-panel">
+            <h1 class="game-title" style="font-size: 28px;">🎯 ФИНИШ</h1>
+            <div id="endStatus" class="status-msg">Результат</div>
+            <div class="final-score" id="finalScoreValue">0</div>
+
+            <button class="menu-btn btn-play" onclick="restartLevel()">🔄 ЗАНОВО</button>
+            <button class="menu-btn btn-secondary" onclick="showLevelSelect()">🗺 К КАРТЕ</button>
+            <button class="menu-btn btn-back" onclick="toMainMenu()">🏠 МЕНЮ</button>
+        </div>
+    </div>
+</div>
+
+    <script src="script.js"></script>
 </body>
 </html>
