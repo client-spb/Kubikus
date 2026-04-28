@@ -1,4 +1,48 @@
 
+// ==================== ТИПЫ ПЛАТФОРМ ====================
+const PLATFORM_TYPES = {
+    GRASS: { 
+        id: 'grass', 
+        name: 'Трава', 
+        color: '#66BB6A', 
+        friction: 1.0, 
+        damage: false,
+        icon: '🌿'
+    },
+    ICE: { 
+        id: 'ice', 
+        name: 'Лёд', 
+        color: '#A5D8FF', 
+        friction: 0.3, 
+        damage: false,
+        icon: '🧊'
+    },
+    SNOW: { 
+        id: 'snow', 
+        name: 'Снег', 
+        color: '#E8F4F8', 
+        friction: 0.6, 
+        damage: false,
+        icon: '❄️'
+    },
+    SPIKES: { 
+        id: 'spikes', 
+        name: 'Шипы', 
+        color: '#E74C3C', 
+        friction: 0.8, 
+        damage: true,
+        icon: '🔺'
+    },
+    STONE: { 
+        id: 'stone', 
+        name: 'Камень', 
+        color: '#7F8C8D', 
+        friction: 0.9, 
+        damage: false,
+        icon: '🪨'
+    }
+};
+
 // ==================== КОНФИГУРАЦИЯ УРОВНЕЙ ====================
 // Здесь настраивается логика каждого уровня
 const LEVELS_CONFIG = [
@@ -10,7 +54,11 @@ const LEVELS_CONFIG = [
         speedMod: 1.0,
         desc: "Собери 20 золотых монет, чтобы открыть портал.",
         icon: "🪙",
-        diff: "Новичок"
+        diff: "Новичок",
+        platforms: [
+            { type: 'grass', chance: 5 },
+            { type: 'stone', chance: 2 }
+        ]
     },
     {
         id: 2,
@@ -20,7 +68,12 @@ const LEVELS_CONFIG = [
         speedMod: 1.2,
         desc: "Продержись 60 секунд в этом опасном мире.",
         icon: "⏱️",
-        diff: "Любитель"
+        diff: "Любитель",
+        platforms: [
+            { type: 'snow', chance: 4 },
+            { type: 'ice', chance: 3 },
+            { type: 'grass', chance: 2 }
+        ]
     },
     {
         id: 3,
@@ -30,7 +83,12 @@ const LEVELS_CONFIG = [
         speedMod: 1.8, // Быстрее
         desc: "Прыгни на 50 платформ. Осторожно, скорость увеличена!",
         icon: "🟩",
-        diff: "Эксперт"
+        diff: "Эксперт",
+        platforms: [
+            { type: 'stone', chance: 5 },
+            { type: 'spikes', chance: 2 },
+            { type: 'ice', chance: 3 }
+        ]
     }
     // Можно добавить еще уровни здесь...
 ];
@@ -188,6 +246,7 @@ function startGame(config) {
     scoreElement.style.display = 'block';
 
     resetGameVariables();
+    landedPlatforms.clear(); // Очищаем набор приземлившихся платформ
     gameRunning = true;
     lastTime = performance.now();
     gameLoop(lastTime);
@@ -281,71 +340,92 @@ function updateHUD() {
 
 // ==================== ДВИЖОК ИГРЫ ====================
 
+// Функция выбора типа платформы на основе настроек уровня
+function getRandomPlatformType() {
+    if (!currentLevelConfig || !currentLevelConfig.platforms) {
+        return PLATFORM_TYPES.GRASS;
+    }
+    
+    // Собираем все шансы
+    let totalChance = 0;
+    const platformChances = currentLevelConfig.platforms.map(p => {
+        totalChance += p.chance;
+        return { type: p.type, chance: p.chance };
+    });
+    
+    // Генерируем случайное число
+    let random = Math.random() * totalChance;
+    
+    // Выбираем тип платформы
+    for (let pc of platformChances) {
+        if (random < pc.chance) {
+            return Object.values(PLATFORM_TYPES).find(pt => pt.id === pc.type) || PLATFORM_TYPES.GRASS;
+        }
+        random -= pc.chance;
+    }
+    
+    return PLATFORM_TYPES.GRASS;
+}
+
 function generatePlatforms() {
     platforms = [];
     coins = [];
-    platforms.push({ x: 150, y: 500, width: 100, height: 15 });
-    for (let i = 1; i < 8; i++) createPlatform(i * 90);
+    // Стартовая платформа всегда безопасная (трава)
+    platforms.push({ 
+        x: 150, 
+        y: 500, 
+        width: 100, 
+        height: 15,
+        type: PLATFORM_TYPES.GRASS
+    });
+    for (let i = 1; i < 8; i++) {
+        createPlatform(i * 90);
+    }
 }
 
 function createPlatform(yPos) {
-    let p = { x: Math.random() * (canvas.width - 90), y: yPos, width: 80 + Math.random() * 30, height: 15 };
+    const platformType = getRandomPlatformType();
+    let p = { 
+        x: Math.random() * (canvas.width - 90), 
+        y: yPos, 
+        width: 80 + Math.random() * 30, 
+        height: 15,
+        type: platformType
+    };
     platforms.push(p);
-    if (Math.random() < 0.6) {
+    if (Math.random() < 0.6 && !platformType.damage) {
         coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
     }
 }
 
-// Функция для рисования закругленного прямоугольника
-function drawRoundedRect(ctx, x, y, width, height, radius, fillColor) {
-    ctx.fillStyle = fillColor;
-    ctx.beginPath();
-    ctx.moveTo(x + radius, y);
-    ctx.lineTo(x + width - radius, y);
-    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-    ctx.lineTo(x + width, y + height - radius);
-    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-    ctx.lineTo(x + radius, y + height);
-    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-    ctx.lineTo(x, y + radius);
-    ctx.quadraticCurveTo(x, y, x + radius, y);
-    ctx.closePath();
-    ctx.fill();
-}
-
 // Доработка логики прыжков для уровня 3
 let lastJumpState = false;
+let landedPlatforms = new Set(); // Для отслеживания уникальных платформ
 
 function gameLoop(timestamp) {
     if (!gameRunning) return;
-
-    const dt = (timestamp - lastTime) / 1000;
-    lastTime = timestamp;
-
+    
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     drawClouds();
 
-    // Обновление времени для уровня на время
     if (currentLevelConfig.type === 'time') {
-        gameTime += dt;
+        gameTime += (timestamp - lastTime) / 1000;
         updateHUD();
         checkWinCondition();
-        if (!gameRunning) return;
+        if(!gameRunning) return;
     }
+    lastTime = timestamp;
 
-    // Управление
     if (isTouching) {
         const dx = touchX - (player.x + player.width / 2);
         player.x += dx * 0.15;
     }
 
-    // Физика
     player.vy += GRAVITY;
     player.y += player.vy;
     if (player.x + player.width < 0) player.x = canvas.width;
     if (player.x > canvas.width) player.x = -player.width;
 
-    // Платформы
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
     const moveSpeed = 2.0 * speedMultiplier;
 
@@ -353,42 +433,51 @@ function gameLoop(timestamp) {
 
     for (let p of platforms) {
         p.y += moveSpeed;
-
-        // Столкновение
+        
+        // Создаем уникальный ID для платформы
+        if (!p.id) {
+            p.id = Math.random().toString(36).substr(2, 9);
+        }
+        
         if (player.vy > 0 &&
             player.x + player.width > p.x &&
             player.x < p.x + p.width &&
             player.y + player.height > p.y &&
             player.y + player.height - player.vy <= p.y + 10) {
 
+            // Проверка на шипы - мгновенная смерть
+            if (p.type && p.type.damage) {
+                finishLevel(false);
+                return;
+            }
+
             player.y = p.y - player.height;
             player.vy = 0;
-            player.jumping = false;
             onGround = true;
-        }
 
-        // Респаун
+            // Логика для уровня "Прыжки" (Тип 3)
+            // Считаем только новые платформы
+            if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
+                landedPlatforms.add(p.id);
+                score++;
+                updateHUD();
+                checkWinCondition();
+            }
+        }
         if (p.y > canvas.height) {
             p.y = -20;
             p.x = Math.random() * (canvas.width - p.width);
             p.width = 80 + Math.random() * 30;
-
-            if (Math.random() < 0.5) {
+            // При респауне выбираем новый тип платформы
+            const newPlatformType = getRandomPlatformType();
+            p.type = newPlatformType;
+            p.id = Math.random().toString(36).substr(2, 9); // Новый ID
+            
+            if (Math.random() < 0.5 && !newPlatformType.damage) {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
         }
     }
-
-    // Подсчет прыжков для уровня 3 (тип "jumps")
-    // Считаем +1 за каждое приземление на платформу
-    if (currentLevelConfig.type === 'jumps') {
-        if (onGround && !lastJumpState) {
-            score++;
-            updateHUD();
-            checkWinCondition();
-        }
-    }
-    lastJumpState = onGround;
 
     // Монетки
     for (let i = coins.length - 1; i >= 0; i--) {
@@ -396,7 +485,6 @@ function gameLoop(timestamp) {
         if (!c.collected &&
             player.x < c.x + c.width && player.x + player.width > c.x &&
             player.y < c.y + c.height && player.y + player.height > c.y) {
-
             c.collected = true;
             if (currentLevelConfig.type === 'coins') {
                 score++;
@@ -412,71 +500,74 @@ function gameLoop(timestamp) {
         }
     }
 
-    // Проверка смерти
-    if (player.y > canvas.height) {
-        finishLevel(false);
-    }
+    if (player.y > canvas.height) finishLevel(false);
 
     drawGameObjects();
-
-    if (gameRunning) {
-        animationId = requestAnimationFrame(gameLoop);
-    }
+    if (gameRunning) animationId = requestAnimationFrame(gameLoop);
 }
 
 
 function drawClouds() {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.beginPath(); ctx.arc(50, 100, 30, 0, Math.PI*2); ctx.arc(90, 100, 40, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(250, 250, 25, 0, Math.PI*2); ctx.arc(290, 250, 35, 0, Math.PI*2); ctx.fill();
 }
 
 function drawGameObjects() {
-    // Яркие веселые цвета для платформ
-    const platformColors = ['#00E676', '#FFEB3B', '#FF4081', '#40C4FF', '#7C4DFF'];
-    
+    // Отрисовка платформ с учетом их типа
     for (let p of platforms) {
-        const radius = 8;
-        const color = platformColors[Math.floor(Math.random() * platformColors.length)];
-        drawRoundedRect(ctx, p.x, p.y, p.width, p.height, radius, color);
-    }
-    
-    // Яркие монетки
-    ctx.fillStyle = '#FFD700';
-    for (let c of coins) {
-        if(!c.collected) { 
-            ctx.beginPath(); 
-            ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); 
-            ctx.fill();
-            // Блеск на монетке
+        const platformType = p.type || PLATFORM_TYPES.GRASS;
+        
+        // Основной цвет платформы
+        ctx.fillStyle = platformType.color;
+        ctx.fillRect(p.x, p.y, p.width, p.height);
+        
+        // Декоративная обводка
+        ctx.strokeStyle = 'rgba(0,0,0,0.2)';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(p.x, p.y, p.width, p.height);
+        
+        // Если это шипы - рисуем треугольники сверху
+        if (platformType.id === 'spikes') {
+            ctx.fillStyle = '#C0392B';
+            const spikeCount = Math.floor(p.width / 15);
+            for (let i = 0; i < spikeCount; i++) {
+                ctx.beginPath();
+                ctx.moveTo(p.x + i * 15, p.y);
+                ctx.lineTo(p.x + i * 15 + 7.5, p.y - 12);
+                ctx.lineTo(p.x + i * 15 + 15, p.y);
+                ctx.fill();
+            }
+        }
+        
+        // Если это снег или лёд - добавляем блеск
+        if (platformType.id === 'snow' || platformType.id === 'ice') {
             ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-            ctx.beginPath();
-            ctx.arc(c.x+7, c.y+7, 3, 0, Math.PI*2);
-            ctx.fill();
-            ctx.fillStyle = '#FFD700';
+            ctx.fillRect(p.x + 5, p.y + 3, p.width - 10, 3);
+        }
+        
+        // Если это камень - добавляем текстуру
+        if (platformType.id === 'stone') {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            for (let i = 0; i < 3; i++) {
+                const rx = p.x + Math.random() * p.width;
+                const ry = p.y + Math.random() * p.height;
+                ctx.fillRect(rx, ry, 4, 3);
+            }
         }
     }
     
-    // Герой - яркий и веселый
+    ctx.fillStyle = '#FFD700';
+    for (let c of coins) {
+        if(!c.collected) { ctx.beginPath(); ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); ctx.fill(); }
+    }
+    // Герой
     ctx.fillStyle = '#FF5722';
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = 'white';
-    ctx.beginPath(); 
-    ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); 
-    ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); 
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = 'black';
-    ctx.beginPath(); 
-    ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); 
-    ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); 
-    ctx.fill();
-    
-    // Улыбка героя
-    ctx.strokeStyle = 'black';
-    ctx.lineWidth = 2;
-    ctx.beginPath();
-    ctx.arc(player.x+15, player.y+20, 8, 0.2, Math.PI - 0.2);
-    ctx.stroke();
+    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); ctx.fill();
 }
 
 function jump() {
@@ -513,3 +604,4 @@ canvas.addEventListener('mousemove', e => { if(isTouching) touchX = e.offsetX; }
 canvas.addEventListener('mouseup', () => isTouching = false);
 
 drawClouds();
+
