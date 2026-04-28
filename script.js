@@ -266,6 +266,9 @@ function confirmStartLevel() {
 function startGame(config) {
     currentLevelConfig = config;
     scoreElement.style.display = 'block';
+    
+    // Инициализируем элементы фона при старте игры
+    initBackgroundElements();
 
     resetGameVariables();
     landedPlatforms.clear(); // Очищаем набор приземлившихся платформ
@@ -424,42 +427,250 @@ function createPlatform(yPos) {
 let lastJumpState = false;
 let landedPlatforms = new Set(); // Для отслеживания уникальных платформ
 
-function drawBackground() {
-    // Рисуем красивый градиентный фон
-    const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
-    gradient.addColorStop(0, '#a8edea');
-    gradient.addColorStop(0.5, '#fed6e3');
-    gradient.addColorStop(1, '#ffecd2');
-    ctx.fillStyle = gradient;
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
-    // Движущиеся частицы на фоне
-    const time = Date.now() * 0.001;
-    for (let i = 0; i < 5; i++) {
-        const x = (Math.sin(time * 0.5 + i) * 0.5 + 0.5) * canvas.width;
-        const y = (Math.cos(time * 0.3 + i * 1.5) * 0.5 + 0.5) * canvas.height;
-        const radius = 30 + Math.sin(time + i) * 10;
-        
-        ctx.fillStyle = `rgba(255, 255, 255, ${0.3 - i * 0.05})`;
-        ctx.beginPath();
-        ctx.arc(x, y, radius, 0, Math.PI * 2);
-        ctx.fill();
+// Анимационные параметры для фона
+let bgOffset = 0;
+let cloudPositions = [];
+let planetPositions = [];
+let dandelionPositions = [];
+
+// Инициализация позиций для анимации
+function initBackgroundElements() {
+    // Позиции облаков для уровня 1
+    cloudPositions = [];
+    for (let i = 0; i < 6; i++) {
+        cloudPositions.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * 200 + 50,
+            size: Math.random() * 40 + 30,
+            speed: Math.random() * 0.3 + 0.2
+        });
     }
     
-    // Размытые формы на заднем плане
-    for (let i = 0; i < 3; i++) {
-        const shapeX = (Math.sin(time * 0.2 + i * 2) * 0.5 + 0.5) * canvas.width;
-        const shapeY = (Math.cos(time * 0.25 + i) * 0.5 + 0.5) * canvas.height;
-        const shapeSize = 80 + Math.sin(time * 0.5 + i) * 20;
+    // Позиции планет для уровня 2+
+    planetPositions = [];
+    for (let i = 0; i < 5; i++) {
+        planetPositions.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * canvas.height,
+            size: Math.random() * 30 + 15,
+            speed: Math.random() * 0.2 + 0.1,
+            color: `hsl(${Math.random() * 360}, 70%, 60%)`
+        });
+    }
+    
+    // Позиции одуванчиков для уровня 1
+    dandelionPositions = [];
+    for (let i = 0; i < 8; i++) {
+        dandelionPositions.push({
+            x: Math.random() * canvas.width,
+            y: Math.random() * 100 + 500,
+            size: Math.random() * 8 + 6,
+            sway: Math.random() * Math.PI * 2
+        });
+    }
+}
+
+function drawBackground() {
+    const levelId = currentLevelConfig ? currentLevelConfig.id : 1;
+    const time = Date.now() * 0.001;
+    
+    // Обновляем смещение для параллакса
+    bgOffset += 0.5;
+    
+    if (levelId === 1) {
+        // ===== УРОВЕНЬ 1: ЗЕЛЕНАЯ ПОЛЯНА =====
         
-        const shapeGradient = ctx.createRadialGradient(shapeX, shapeY, 0, shapeX, shapeY, shapeSize);
-        shapeGradient.addColorStop(0, 'rgba(255, 107, 107, 0.15)');
-        shapeGradient.addColorStop(1, 'rgba(254, 202, 87, 0)');
+        // Небо (градиент)
+        const skyGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        skyGradient.addColorStop(0, '#87CEEB');
+        skyGradient.addColorStop(0.5, '#B0E0E6');
+        skyGradient.addColorStop(1, '#98FB98');
+        ctx.fillStyle = skyGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
         
-        ctx.fillStyle = shapeGradient;
+        // Солнце
+        ctx.fillStyle = '#FFD700';
         ctx.beginPath();
-        ctx.arc(shapeX, shapeY, shapeSize, 0, Math.PI * 2);
+        ctx.arc(canvas.width - 60, 60, 40, 0, Math.PI * 2);
         ctx.fill();
+        
+        // Солнечные лучи
+        for (let i = 0; i < 8; i++) {
+            const angle = (time * 0.5) + (i * Math.PI / 4);
+            const rayLength = 60 + Math.sin(time * 2 + i) * 10;
+            ctx.strokeStyle = `rgba(255, 215, 0, 0.3)`;
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width - 60 + Math.cos(angle) * 40, 60 + Math.sin(angle) * 40);
+            ctx.lineTo(canvas.width - 60 + Math.cos(angle) * rayLength, 60 + Math.sin(angle) * rayLength);
+            ctx.stroke();
+        }
+        
+        // Горы на заднем плане (параллакс)
+        ctx.fillStyle = '#6B8E6B';
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 150);
+        for (let i = 0; i <= canvas.width; i += 50) {
+            const mountainHeight = 80 + Math.sin((i + bgOffset * 0.3) * 0.05) * 40 + Math.sin((i + bgOffset * 0.3) * 0.1) * 20;
+            ctx.lineTo(i, canvas.height - 150 - mountainHeight);
+        }
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Горы на переднем плане
+        ctx.fillStyle = '#4A6B4A';
+        ctx.beginPath();
+        ctx.moveTo(0, canvas.height - 100);
+        for (let i = 0; i <= canvas.width; i += 40) {
+            const mountainHeight = 50 + Math.sin((i - bgOffset * 0.5) * 0.08) * 25;
+            ctx.lineTo(i, canvas.height - 100 - mountainHeight);
+        }
+        ctx.lineTo(canvas.width, canvas.height);
+        ctx.lineTo(0, canvas.height);
+        ctx.closePath();
+        ctx.fill();
+        
+        // Зеленая поляна (трава)
+        const grassGradient = ctx.createLinearGradient(0, canvas.height - 80, 0, canvas.height);
+        grassGradient.addColorStop(0, '#7CFC00');
+        grassGradient.addColorStop(1, '#228B22');
+        ctx.fillStyle = grassGradient;
+        ctx.fillRect(0, canvas.height - 80, canvas.width, 80);
+        
+        // Одуванчики
+        for (let i = 0; i < dandelionPositions.length; i++) {
+            const d = dandelionPositions[i];
+            const swayOffset = Math.sin(time * 2 + d.sway) * 5;
+            
+            // Стебель
+            ctx.strokeStyle = '#228B22';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(d.x, d.y);
+            ctx.quadraticCurveTo(d.x + swayOffset, d.y - 20, d.x + swayOffset * 0.5, d.y - 40);
+            ctx.stroke();
+            
+            // Головка одуванчика
+            ctx.fillStyle = '#FFFACD';
+            ctx.beginPath();
+            ctx.arc(d.x + swayOffset * 0.5, d.y - 45, d.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Семена (пушинки)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            for (let j = 0; j < 8; j++) {
+                const seedAngle = (j / 8) * Math.PI * 2;
+                const seedDist = d.size * 0.7;
+                ctx.beginPath();
+                ctx.arc(
+                    d.x + swayOffset * 0.5 + Math.cos(seedAngle) * seedDist,
+                    d.y - 45 + Math.sin(seedAngle) * seedDist,
+                    2, 0, Math.PI * 2
+                );
+                ctx.fill();
+            }
+        }
+        
+        // Облака (движутся)
+        for (let i = 0; i < cloudPositions.length; i++) {
+            const c = cloudPositions[i];
+            c.x += c.speed;
+            if (c.x > canvas.width + c.size * 2) {
+                c.x = -c.size * 2;
+            }
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.beginPath();
+            ctx.arc(c.x, c.y, c.size, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 0.8, c.y - c.size * 0.2, c.size * 0.7, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 1.5, c.y, c.size * 0.9, 0, Math.PI * 2);
+            ctx.arc(c.x + c.size * 0.5, c.y + c.size * 0.3, c.size * 0.6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+    } else {
+        // ===== УРОВЕНЬ 2+: КОСМОС =====
+        
+        // Космический градиент
+        const spaceGradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        spaceGradient.addColorStop(0, '#0B0014');
+        spaceGradient.addColorStop(0.3, '#1A0033');
+        spaceGradient.addColorStop(0.7, '#2D004D');
+        spaceGradient.addColorStop(1, '#4B0082');
+        ctx.fillStyle = spaceGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Звезды (мерцающие)
+        for (let i = 0; i < 100; i++) {
+            const starX = (i * 37) % canvas.width;
+            const starY = (i * 53) % canvas.height;
+            const twinkle = Math.sin(time * 3 + i) * 0.5 + 0.5;
+            const starSize = 1 + twinkle * 1.5;
+            
+            ctx.fillStyle = `rgba(255, 255, 255, ${0.3 + twinkle * 0.7})`;
+            ctx.beginPath();
+            ctx.arc(starX, starY, starSize, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        
+        // Млечный путь (размытая полоса)
+        const milkyWayGradient = ctx.createRadialGradient(
+            canvas.width * 0.3, canvas.height * 0.4, 0,
+            canvas.width * 0.3, canvas.height * 0.4, canvas.width * 0.5
+        );
+        milkyWayGradient.addColorStop(0, 'rgba(150, 100, 200, 0.15)');
+        milkyWayGradient.addColorStop(0.5, 'rgba(100, 50, 150, 0.08)');
+        milkyWayGradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = milkyWayGradient;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // Планеты (движутся)
+        for (let i = 0; i < planetPositions.length; i++) {
+            const p = planetPositions[i];
+            p.y += p.speed;
+            if (p.y > canvas.height + p.size * 2) {
+                p.y = -p.size * 2;
+                p.x = Math.random() * canvas.width;
+            }
+            
+            // Тело планеты
+            const planetGradient = ctx.createRadialGradient(
+                p.x - p.size * 0.3, p.y - p.size * 0.3, 0,
+                p.x, p.y, p.size
+            );
+            planetGradient.addColorStop(0, p.color);
+            planetGradient.addColorStop(0.7, p.color);
+            planetGradient.addColorStop(1, 'rgba(0, 0, 0, 0.5)');
+            
+            ctx.fillStyle = planetGradient;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Кольца у некоторых планет
+            if (i % 2 === 0 && p.size > 20) {
+                ctx.strokeStyle = 'rgba(200, 180, 150, 0.6)';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.ellipse(p.x, p.y, p.size * 1.8, p.size * 0.5, Math.PI * 0.1, 0, Math.PI * 2);
+                ctx.stroke();
+            }
+        }
+        
+        // Падающие звезды (периодически)
+        if (Math.sin(time * 0.5) > 0.8) {
+            const meteorX = ((time * 50) % canvas.width);
+            const meteorY = ((time * 80) % (canvas.height / 2));
+            
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            ctx.moveTo(meteorX, meteorY);
+            ctx.lineTo(meteorX - 30, meteorY + 30);
+            ctx.stroke();
+        }
     }
 }
 
