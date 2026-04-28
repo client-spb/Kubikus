@@ -1148,26 +1148,11 @@ function jump() {
 function handleInput(x, y) {
     if (!gameRunning) return;
     
-    // Проверяем, кликнули ли по платформе
-    let clickedOnPlatform = false;
+    // Прыгаем только если игрок на земле (стоит на платформе)
+    isTouching = true;
     const rect = canvas.getBoundingClientRect();
-    const canvasX = x - rect.left;
-    const canvasY = y - rect.top;
-    
-    for (let p of platforms) {
-        if (canvasX >= p.x && canvasX <= p.x + p.width &&
-            canvasY >= p.y && canvasY <= p.y + p.height) {
-            clickedOnPlatform = true;
-            break;
-        }
-    }
-    
-    // Прыгаем только если не кликнули по платформе и игрок на земле
-    if (!clickedOnPlatform) {
-        isTouching = true;
-        touchX = canvasX;
-        jump();
-    }
+    touchX = x - rect.left;
+    jump();
 }
 
 canvas.addEventListener('touchstart', e => {
