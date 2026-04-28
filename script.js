@@ -97,6 +97,8 @@ const TOTAL_LEVELS = 20; // Всего слотов в сетке
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
 const scoreElement = document.getElementById('score-hud');
+const coinsCountElement = document.getElementById('coins-count');
+const currencyDisplay = document.getElementById('currency-display');
 const mainMenu = document.getElementById('mainMenu');
 const levelSelectScreen = document.getElementById('levelSelect');
 const levelPreviewScreen = document.getElementById('levelPreview');
@@ -397,8 +399,16 @@ let platforms = [];
 let coins = [];          // Золотые монеты (дают монеты + очки)
 let fruits = [];         // Фрукты (дают только очки + комбо)
 let animatedCoins = [];  // Монеты для анимации полета к счетчику
-let score = 0;           // Основной счетчик (монеты или прыжки)
-let fruitScore = 0;      // Дополнительные очки за фрукты
+let animatedFruits = []; // Фрукты для анимации конвертации в монеты
+
+// === РАЗДЕЛЕНИЕ ВАЛЮТЫ ===
+// coinsCount - валюта для магазина (монеты)
+// scorePoints - очки для таблицы лидеров (рейтинг)
+// fruitScore - дополнительные очки за фрукты (идут в рейтинг)
+let coinsCount = 0;      
+let scorePoints = 0;     
+let fruitScore = 0;      
+
 let gameTime = 0;        // Для уровня на время
 let gameRunning = false;
 let lastTime = 0;
@@ -415,17 +425,23 @@ const MAX_COMBO = 5;             // Максимальный множитель 
 let comboTimer = null;           // Таймер для сброса комбо
 let comboDisplay = { active: false, timer: 0, value: 0 };  // Для отображения комбо
 
+// Система конвертации фруктов
+const FRUIT_CONVERSION_THRESHOLD = 10; // Количество фруктов для авто-конвертации
+let collectedFruitsCount = 0;          // Счётчик собранных фруктов
+let isConvertingFruits = false;        // Флаг активной конвертации
+
 // ==================== ТИПЫ ФРУКТОВ ====================
 // Разные фрукты дают разное количество очков и имеют разные визуальные эффекты
+// Также каждый фрукт конвертируется в определённое количество монет при авто-конвертации
 const FRUIT_TYPES = {
-    APPLE: { id: 'apple', name: 'Яблоко', icon: '🍎', points: 10, color: '#FF4444' },
-    ORANGE: { id: 'orange', name: 'Апельсин', icon: '🍊', points: 15, color: '#FFA500' },
-    BANANA: { id: 'banana', name: 'Банан', icon: '🍌', points: 20, color: '#FFE135' },
-    STRAWBERRY: { id: 'strawberry', name: 'Клубника', icon: '🍓', points: 25, color: '#DC143C' },
-    CHERRY: { id: 'cherry', name: 'Вишня', icon: '🍒', points: 30, color: '#8B0000' },
-    GRAPES: { id: 'grapes', name: 'Виноград', icon: '🍇', points: 35, color: '#9370DB' },
-    WATERMELON: { id: 'watermelon', name: 'Арбуз', icon: '🍉', points: 40, color: '#FF6B6B' },
-    PINEAPPLE: { id: 'pineapple', name: 'Ананас', icon: '🍍', points: 50, color: '#FFD700' }
+    APPLE: { id: 'apple', name: 'Яблоко', icon: '🍎', points: 10, color: '#FF4444', coinValue: 2 },
+    ORANGE: { id: 'orange', name: 'Апельсин', icon: '🍊', points: 15, color: '#FFA500', coinValue: 3 },
+    BANANA: { id: 'banana', name: 'Банан', icon: '🍌', points: 20, color: '#FFE135', coinValue: 4 },
+    STRAWBERRY: { id: 'strawberry', name: 'Клубника', icon: '🍓', points: 25, color: '#DC143C', coinValue: 5 },
+    CHERRY: { id: 'cherry', name: 'Вишня', icon: '🍒', points: 30, color: '#8B0000', coinValue: 6 },
+    GRAPES: { id: 'grapes', name: 'Виноград', icon: '🍇', points: 35, color: '#9370DB', coinValue: 7 },
+    WATERMELON: { id: 'watermelon', name: 'Арбуз', icon: '🍉', points: 40, color: '#FF6B6B', coinValue: 8 },
+    PINEAPPLE: { id: 'pineapple', name: 'Ананас', icon: '🍍', points: 50, color: '#FFD700', coinValue: 10 }
 };
 
 // Получить случайный тип фрукта
@@ -433,6 +449,59 @@ function getRandomFruitType() {
     const fruitKeys = Object.keys(FRUIT_TYPES);
     const randomKey = fruitKeys[Math.floor(Math.random() * fruitKeys.length)];
     return FRUIT_TYPES[randomKey];
+}
+
+// ==================== КОНВЕРТАЦИЯ ФРУКТОВ В МОНЕТЫ ====================
+// Когда собрано определённое количество фруктов, они автоматически
+// конвертируются в монеты с красивой анимацией
+function convertFruitsToCoins() {
+    if (isConvertingFruits) return;
+    
+    isConvertingFruits = true;
+    
+    // Звук начала конвертации
+    if (audioCtx && allSoundEnabled) {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        oscillator.type = 'sine';
+        oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
+        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.start(audioCtx.currentTime);
+        oscillator.stop(audioCtx.currentTime + 0.5);
+    }
+    
+    // Создаём анимированные фрукты для каждого собранного типа
+    // Для простоты берём среднее значение монет за фрукты
+    const avgCoinValue = 5; // Среднее значение монет за фрукт
+    const totalCoins = collectedFruitsCount * avgCoinValue;
+    
+    // Показываем визуальный эффект - несколько фруктов летят в центр
+    for (let i = 0; i < Math.min(collectedFruitsCount, 8); i++) {
+        const fruitType = getRandomFruitType();
+        animatedFruits.push({
+            x: player.x + Math.random() * 40 - 20,
+            y: player.y + Math.random() * 40 - 20,
+            width: 24,
+            height: 24,
+            type: fruitType,
+            points: fruitType.points,
+            coinValue: fruitType.coinValue,
+            progress: 0,
+            speed: 0.05,
+            rotation: 0
+        });
+    }
+    
+    // Сбрасываем счётчик после небольшой задержки (когда анимация завершится)
+    setTimeout(() => {
+        collectedFruitsCount = 0;
+        isConvertingFruits = false;
+        updateHUD();
+    }, 2000);
 }
 
 // ==================== ФИЗИКА И КОЛЛИЗИИ ====================
@@ -704,6 +773,10 @@ function toMainMenu() {
     gameOverScreen.classList.add('hidden');
     mainMenu.classList.remove('hidden');
     scoreElement.style.display = 'none';
+    // Скрываем дисплей монет при выходе в меню
+    if (currencyDisplay) {
+        currencyDisplay.style.display = 'none';
+    }
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Останавливаем фоновую музыку при выходе в меню
@@ -716,8 +789,8 @@ function checkWinCondition() {
     if (!currentLevelConfig) return false;
 
     let won = false;
-    if (currentLevelConfig.type === 'coins' && score >= currentLevelConfig.target) won = true;
-    if (currentLevelConfig.type === 'jumps' && score >= currentLevelConfig.target) won = true;
+    if (currentLevelConfig.type === 'coins' && coinsCount >= currentLevelConfig.target) won = true;
+    if (currentLevelConfig.type === 'jumps' && scorePoints >= currentLevelConfig.target) won = true;
     if (currentLevelConfig.type === 'time' && gameTime >= currentLevelConfig.target) won = true;
 
     if (won) {
@@ -750,8 +823,12 @@ function finishLevel(success) {
         // Показываем прогресс
         if (currentLevelConfig.type === 'time') {
              finalScoreValue.textContent = Math.floor(gameTime) + " сек";
+        } else if (currentLevelConfig.type === 'coins') {
+             finalScoreValue.textContent = coinsCount + " / " + currentLevelConfig.target;
+        } else if (currentLevelConfig.type === 'jumps') {
+             finalScoreValue.textContent = scorePoints + " / " + currentLevelConfig.target;
         } else {
-             finalScoreValue.textContent = score + " / " + currentLevelConfig.target;
+             finalScoreValue.textContent = (scorePoints + fruitScore) + " очков";
         }
     }
 
@@ -766,12 +843,16 @@ function resetGameVariables() {
     player.y = 50;
     player.vy = 0;
     prevPlayerY = 50;
-    score = 0;
+    coinsCount = 0;
+    scorePoints = 0;
     fruitScore = 0;
     gameTime = 0;
     fruits = [];
+    animatedFruits = [];
     fruitCombo = 0;
     lastFruitTime = 0;
+    collectedFruitsCount = 0;
+    isConvertingFruits = false;
     comboDisplay = { active: false, timer: 0, value: 0 };
     generatePlatforms();
     updateHUD();
@@ -781,26 +862,21 @@ function updateHUD() {
     if (!currentLevelConfig) return;
 
     let text = "";
-    const totalScore = score + fruitScore;
+    const totalScorePoints = scorePoints + fruitScore;
     
+    // Отображение в зависимости от типа уровня
     if (currentLevelConfig.type === 'coins') {
-        text = `🪙 ${score} / ${currentLevelConfig.target}`;
-        // Добавляем очки за фрукты отдельной строкой если они есть
-        if (fruitScore > 0) {
-            text += ` | 🍎 +${fruitScore}`;
-        }
+        text = `🪙 ${coinsCount} / ${currentLevelConfig.target}`;
+        // Добавляем очки для лидеров отдельной строкой
+        text += ` | ⭐ ${totalScorePoints}`;
     } else if (currentLevelConfig.type === 'jumps') {
-        text = `🟩 Прыжки: ${score} / ${currentLevelConfig.target}`;
-        if (fruitScore > 0) {
-            text += ` | 🍎 +${fruitScore}`;
-        }
+        text = `🟩 Прыжки: ${scorePoints} / ${currentLevelConfig.target}`;
+        text += ` | ⭐ ${totalScorePoints}`;
     } else if (currentLevelConfig.type === 'time') {
         text = `⏱️ ${Math.floor(gameTime)} / ${currentLevelConfig.target} сек`;
-        if (fruitScore > 0) {
-            text += ` | 🍎 +${fruitScore}`;
-        }
+        text += ` | ⭐ ${totalScorePoints}`;
     } else {
-        text = `Счёт: ${totalScore}`;
+        text = `⭐ Счёт: ${totalScorePoints} | 🪙 ${coinsCount}`;
     }
     
     // Добавляем индикатор комбо если оно активно
@@ -808,7 +884,18 @@ function updateHUD() {
         text += ` 🔥 x${fruitCombo}!`;
     }
     
+    // Индикатор прогресса конвертации фруктов
+    if (collectedFruitsCount > 0) {
+        text += ` 🍎 ${collectedFruitsCount}/${FRUIT_CONVERSION_THRESHOLD}`;
+    }
+    
     scoreElement.textContent = text;
+    
+    // Обновляем отдельный дисплей монет для магазина
+    if (coinsCountElement && currencyDisplay) {
+        coinsCountElement.textContent = coinsCount;
+        currencyDisplay.style.display = 'block';
+    }
 }
 
 // ==================== ДВИЖОК ИГРЫ ====================
@@ -1178,7 +1265,7 @@ function gameLoop(timestamp) {
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
     const moveSpeed = 1.5 * speedMultiplier;
 
-    // Монетки
+    // Монетки - дают монеты для магазина и очки для лидеров
     for (let i = coins.length - 1; i >= 0; i--) {
         let c = coins[i];
         if (!c.collected &&
@@ -1196,10 +1283,16 @@ function gameLoop(timestamp) {
                 progress: 0,
                 speed: 0.08
             });
+            // Монета даёт +1 к цели уровня и +1 монету для магазина
             if (currentLevelConfig.type === 'coins') {
-                score++;
+                coinsCount++;
+                scorePoints++; // Также даём очко для лидеров
                 updateHUD();
                 checkWinCondition();
+            } else {
+                coinsCount++; // В других типах уровней тоже даём монеты
+                scorePoints++;
+                updateHUD();
             }
             playTone('coin');
         }
@@ -1210,7 +1303,7 @@ function gameLoop(timestamp) {
         }
     }
 
-    // Фрукты - сбор с комбо-системой
+    // Фрукты - сбор с комбо-системой, дают только очки для лидеров
     const currentTime = Date.now();
     for (let i = fruits.length - 1; i >= 0; i--) {
         let f = fruits[i];
@@ -1225,6 +1318,7 @@ function gameLoop(timestamp) {
             player.y < f.y + floatY + f.height && player.y + player.height > f.y + floatY) {
             
             f.collected = true;
+            collectedFruitsCount++; // Увеличиваем счётчик собранных фруктов
             
             // Расчёт комбо
             const timeSinceLastFruit = currentTime - lastFruitTime;
@@ -1266,6 +1360,11 @@ function gameLoop(timestamp) {
                 oscillator.stop(audioCtx.currentTime + 0.2);
             }
             
+            // Проверяем, достигли ли порога для авто-конвертации фруктов в монеты
+            if (collectedFruitsCount >= FRUIT_CONVERSION_THRESHOLD && !isConvertingFruits) {
+                convertFruitsToCoins();
+            }
+            
             fruits.splice(i, 1);
         } else if (!f.collected) {
             // Фрукт движется вниз вместе с платформами
@@ -1287,6 +1386,27 @@ function gameLoop(timestamp) {
             const easeProgress = 1 - Math.pow(1 - ac.progress, 3);
             ac.x = ac.x + (ac.targetX - ac.x) * ac.speed * (1 - ac.progress);
             ac.y = ac.y + (ac.targetY - ac.y) * ac.speed * (1 - ac.progress);
+        }
+    }
+
+    // Обновляем анимированные фрукты (для конвертации в монеты)
+    for (let i = animatedFruits.length - 1; i >= 0; i--) {
+        let af = animatedFruits[i];
+        af.progress += af.speed;
+        if (af.progress >= 1) {
+            // Анимация завершена - добавляем монеты
+            coinsCount += af.coinValue;
+            scorePoints += af.points; // Очки тоже добавляем
+            updateHUD();
+            animatedFruits.splice(i, 1);
+        } else {
+            // Плавное движение к центру для конвертации
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            af.x = af.x + (centerX - af.x) * af.speed;
+            af.y = af.y + (centerY - af.y) * af.speed;
+            // Вращение для эффекта
+            af.rotation += 0.2;
         }
     }
 
@@ -1408,6 +1528,36 @@ function drawGameObjects() {
         ctx.fillStyle = '#FFD700';
     }
     
+    // Рисуем анимированные фрукты (конвертация в монеты)
+    for (let af of animatedFruits) {
+        ctx.save();
+        ctx.translate(af.x + af.width / 2, af.y + af.height / 2);
+        ctx.rotate(af.rotation);
+        
+        // Свечение вокруг фрукта
+        const gradient = ctx.createRadialGradient(0, 0, 5, 0, 0, 25);
+        gradient.addColorStop(0, af.type.color + '80');
+        gradient.addColorStop(1, 'transparent');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(0, 0, 25, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Основной фрукт
+        ctx.fillStyle = af.type.color;
+        ctx.beginPath();
+        ctx.arc(0, 0, 12, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Блик
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(-4, -4, 4, 0, Math.PI * 2);
+        ctx.fill();
+        
+        ctx.restore();
+    }
+    
     // Герой
     ctx.fillStyle = '#FF5722';
     ctx.fillRect(player.x, player.y, player.width, player.height);
@@ -1439,6 +1589,18 @@ function drawGameObjects() {
         ctx.fillStyle = comboGradient;
         ctx.fillText(`🔥 x${fruitCombo} COMBO!`, 0, 0);
         
+        ctx.restore();
+    }
+    
+    // Индикатор конвертации фруктов (когда достигнут порог)
+    if (isConvertingFruits) {
+        ctx.save();
+        ctx.font = 'bold 24px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = '#FFD700';
+        ctx.shadowColor = '#FFA500';
+        ctx.shadowBlur = 10;
+        ctx.fillText('🍎→🪙 КОНВЕРТАЦИЯ!', canvas.width / 2, canvas.height / 2 - 50);
         ctx.restore();
     }
 }
