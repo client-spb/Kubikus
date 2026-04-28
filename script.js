@@ -625,7 +625,9 @@ function generatePlatforms() {
         height: 15,
         type: PLATFORM_TYPES.GRASS
     });
-    for (let i = 1; i < 8; i++) {
+    // Для первого уровня создаём меньше платформ
+    const platformCount = currentLevelConfig && currentLevelConfig.id === 1 ? 5 : 7;
+    for (let i = 1; i <= platformCount; i++) {
         createPlatform(i * 90);
     }
 }
