@@ -296,6 +296,9 @@ function createPlatform(yPos) {
     }
 }
 
+// Доработка логики прыжков для уровня 3
+let lastJumpState = false;
+
 function gameLoop(timestamp) {
     if (!gameRunning) return;
 
@@ -310,7 +313,7 @@ function gameLoop(timestamp) {
         gameTime += dt;
         updateHUD();
         checkWinCondition();
-        if (!gameRunning) return; // Если выиграли во время проверки
+        if (!gameRunning) return;
     }
 
     // Управление
@@ -329,6 +332,8 @@ function gameLoop(timestamp) {
     const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
     const moveSpeed = 2.0 * speedMultiplier;
 
+    let onGround = false;
+
     for (let p of platforms) {
         p.y += moveSpeed;
 
@@ -342,11 +347,7 @@ function gameLoop(timestamp) {
             player.y = p.y - player.height;
             player.vy = 0;
             player.jumping = false;
-
-            // Логика подсчета прыжков для уровня 3
-            // Чтобы не спамить счет, можно добавить флаг, но для простоты считаем каждое касание после падения
-            // Лучше считать момент отрыва, но тут сделаем просто: коснулся = +1 (с задержкой или флагом)
-            // Для простоты: считаем только если мы упали сверху
+            onGround = true;
         }
 
         // Респаун
@@ -355,139 +356,15 @@ function gameLoop(timestamp) {
             p.x = Math.random() * (canvas.width - p.width);
             p.width = 80 + Math.random() * 30;
 
-            // Для уровня "Прыжки": новая платформа = потенциальный прыжок.
-            // Но лучше считать в момент прыжка.
-
             if (Math.random() < 0.5) {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
         }
     }
 
-    // Монетки
-    for (let i = coins.length - 1; i >= 0; i--) {
-        let c = coins[i];
-        if (!c.collected &&
-            player.x < c.x + c.width && player.x + player.width > c.x &&
-            player.y < c.y + c.height && player.y + player.height > c.y) {
-
-            c.collected = true;
-            if (currentLevelConfig.type === 'coins') {
-                score++;
-                updateHUD();
-                checkWinCondition();
-            }
-            playTone('coin');
-        }
-        if (c.collected) coins.splice(i, 1);
-        else {
-            c.y += moveSpeed;
-            if (c.y > canvas.height) coins.splice(i, 1);
-        }
-    }
-
-    // Подсчет прыжков (Уровень 3)
-    // Реализуем простую логику: если мы не прыгаем, а потом прыгаем - это прыжок
-    // Но так как управление автоматическое при таче, сложнее.
-    // Давайте считать так: если игрок был на платформе (vy==0), а стал падать или прыгать - это событие.
-    // Для надежности в этом коде: просто увеличиваем счетчик, когда игрок касается платформы,
-    // но с кулдауном.
-
-    // Упрощение для уровня 3: Просто считаем очки как обычно, но цель 50.
-    // Если тип 'jumps', будем давать +1 за каждую новую платформу, на которую прыгнули.
-
-    // Проверка смерти
-    if (player.y > canvas.height) {
-        finishLevel(false);
-    }
-
-    drawGameObjects();
-
-    // Специальная отрисовка для уровня 3 (платформы быстрее)
-    // Уже учтено в speedMultiplier
-
-    if (gameRunning) {
-        animationId = requestAnimationFrame(gameLoop);
-    }
-}
-
-// Доработка логики прыжков для уровня 3
-let lastJumpState = false;
-function gameLoop(timestamp) {
-    if (!gameRunning) return;
-    // ... (код очистки и физики тот же) ...
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawClouds();
-
-    if (currentLevelConfig.type === 'time') {
-        gameTime += (timestamp - lastTime) / 1000;
-        updateHUD();
-        checkWinCondition();
-        if(!gameRunning) return;
-    }
-    lastTime = timestamp;
-
-    if (isTouching) {
-        const dx = touchX - (player.x + player.width / 2);
-        player.x += dx * 0.15;
-    }
-
-    player.vy += GRAVITY;
-    player.y += player.vy;
-    if (player.x + player.width < 0) player.x = canvas.width;
-    if (player.x > canvas.width) player.x = -player.width;
-
-    const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
-    const moveSpeed = 2.0 * speedMultiplier;
-
-    let onGround = false;
-
-    for (let p of platforms) {
-        p.y += moveSpeed;
-        if (player.vy > 0 &&
-            player.x + player.width > p.x &&
-            player.x < p.x + p.width &&
-            player.y + player.height > p.y &&
-            player.y + player.height - player.vy <= p.y + 10) {
-
-            player.y = p.y - player.height;
-            player.vy = 0;
-            onGround = true;
-
-            // Логика для уровня "Прыжки" (Тип 3)
-            // Если мы только что приземлились, а до этого были в воздухе
-            if (currentLevelConfig.type === 'jumps' && !lastJumpState) {
-                 // Это не совсем прыжок, это приземление.
-                 // Но для геймплея сойдет как "преодоление платформы"
-            }
-        }
-        if (p.y > canvas.height) {
-            p.y = -20;
-            p.x = Math.random() * (canvas.width - p.width);
-            if (Math.random() < 0.5) {
-                coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
-            }
-        }
-    }
-
-    // Детекция прыжка для счета (Уровень 3)
-    // Если были на земле, а стали в воздухе
+    // Подсчет прыжков для уровня 3 (тип "jumps")
+    // Считаем +1 за каждое приземление на платформу
     if (currentLevelConfig.type === 'jumps') {
-        if (!onGround && lastJumpState) {
-            // Момент отрыва
-            // Но так как мы можем падать, лучше считать успешный прыжок на другую платформу
-            // Оставим простую механику: +1 очко за каждое касание новой платформы
-        }
-        // Для простоты реализации в рамках одного файла:
-        // Будем считать очки за "высоту" или просто время, но замаскируем под прыжки?
-        // Нет, давайте честно: +1 когда игрок отпускает экран после прыжка?
-        // Давайте проще: +1 за каждый цикл, пока игрок в воздухе? Нет.
-
-        // Решение: В этом коде для уровня 3 будем считать +1 за каждое касание платформы,
-        // но только если это новая платформа.
-        // Так как платформы респаунятся, сложно отследить.
-        // Поэтому для Уровня 3 я изменю условие победы на "Набери 50 очков (прыжков)",
-        // где 1 прыжок = 1 касание платформы.
         if (onGround && !lastJumpState) {
             score++;
             updateHUD();
@@ -502,6 +379,7 @@ function gameLoop(timestamp) {
         if (!c.collected &&
             player.x < c.x + c.width && player.x + player.width > c.x &&
             player.y < c.y + c.height && player.y + player.height > c.y) {
+
             c.collected = true;
             if (currentLevelConfig.type === 'coins') {
                 score++;
@@ -517,10 +395,16 @@ function gameLoop(timestamp) {
         }
     }
 
-    if (player.y > canvas.height) finishLevel(false);
+    // Проверка смерти
+    if (player.y > canvas.height) {
+        finishLevel(false);
+    }
 
     drawGameObjects();
-    if (gameRunning) animationId = requestAnimationFrame(gameLoop);
+
+    if (gameRunning) {
+        animationId = requestAnimationFrame(gameLoop);
+    }
 }
 
 
