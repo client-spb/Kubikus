@@ -56,8 +56,7 @@ const LEVELS_CONFIG = [
         icon: "🪙",
         diff: "Новичок",
         platforms: [
-            { type: 'grass', chance: 5 },
-            { type: 'stone', chance: 2 }
+            { type: 'grass', chance: 10 }
         ]
     },
     {
