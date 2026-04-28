@@ -9,16 +9,18 @@
 </head>
 <body>
 
-<!-- Декоративный фон -->
-<div class="cloud-bg">
-    <div class="cloud"></div>
-    <div class="cloud"></div>
-    <div class="cloud"></div>
-    <div class="deco-circle"></div>
-    <div class="deco-circle"></div>
-</div>
-
 <div id="game-container">
+    <!-- Анимированный задний фон -->
+    <div id="animated-bg">
+        <div class="bg-layer bg-gradient"></div>
+        <div class="bg-particles"></div>
+        <div class="bg-shapes">
+            <div class="shape"></div>
+            <div class="shape"></div>
+            <div class="shape"></div>
+        </div>
+    </div>
+    
     <div id="score-hud">Цель: 0/20</div>
     <canvas id="game" width="400" height="600"></canvas>
 
