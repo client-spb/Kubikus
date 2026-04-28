@@ -1,5 +1,6 @@
 
 // ==================== ТИПЫ ПЛАТФОРМ ====================
+// Определение визуальных и физических свойств различных типов платформ
 const PLATFORM_TYPES = {
     GRASS: { 
         id: 'grass', 
@@ -44,7 +45,7 @@ const PLATFORM_TYPES = {
 };
 
 // ==================== КОНФИГУРАЦИЯ УРОВНЕЙ ====================
-// Здесь настраивается логика каждого уровня
+// Здесь настраивается логика каждого уровня: цели, скорость, типы платформ
 const LEVELS_CONFIG = [
     {
         id: 1,
@@ -120,6 +121,7 @@ let currentLevelConfig = null;
 // ==================== АУДИО СИСТЕМА ====================
 // Используем Web Audio API для качественных синтезированных звуков
 // и фоновой музыки из файла
+// Звуки: прыжки, сбор монет, смерть, победа, приземление
 
 let audioCtx = null;
 let bgmAudio = null;
@@ -183,6 +185,7 @@ function isSoundEnabled() {
 }
 
 // ==================== СИНТЕЗИРОВАННЫЕ ЗВУКИ ====================
+// Генерация звуковых эффектов с помощью осцилляторов Web Audio API
 
 // Звук прыжка - короткий восходящий тон
 function playJumpSound() {
@@ -320,6 +323,7 @@ function playLandSound() {
 
 // ==================== ФОНОВАЯ МУЗЫКА ====================
 // Используем аудиофайл background.mp3 из папки assets/audio/
+// Музыка играет циклично с низкой громкостью (30%)
 
 function startBGM() {
     if (!allSoundEnabled || isBgmPlaying) return;
@@ -375,26 +379,61 @@ function playTone(type) {
     playSound(type);
 }
 
-// Игровая логика
+// ==================== ИГРОВЫЕ КОНСТАНТЫ И ПЕРЕМЕННЫЕ ====================
+// Физические параметры игрока и настройки коллизий
+
 const GRAVITY = 0.6;
 const JUMP_FORCE = -13;
 
 // НАСТРОЙКИ ДЛЯ СТАБИЛЬНЫХ ПРЫЖКОВ (виртуальные коллайдеры)
+// VIRTUAL_MARGIN - расширение хитбоксов для более надёжного обнаружения столкновений
+// SNAP_THRESHOLD - дистанция "примагничивания" игрока к платформе
 const VIRTUAL_MARGIN = 6; // Расширение коллайдеров (в пикселях)
 const SNAP_THRESHOLD = 8; // Дистанция "примагничивания" к платформе
 
+// Игровые объекты и состояние
 let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, onGround: false };
 let platforms = [];
-let coins = [];
-let animatedCoins = []; // Монеты для анимации полета к счетчику
-let score = 0; // Основной счетчик (монеты или прыжки)
-let gameTime = 0; // Для уровня на время
+let coins = [];          // Золотые монеты (дают монеты + очки)
+let fruits = [];         // Фрукты (дают только очки + комбо)
+let animatedCoins = [];  // Монеты для анимации полета к счетчику
+let score = 0;           // Основной счетчик (монеты или прыжки)
+let fruitScore = 0;      // Дополнительные очки за фрукты
+let gameTime = 0;        // Для уровня на время
 let gameRunning = false;
 let lastTime = 0;
 let animationId;
 let touchX = player.x;
 let isTouching = false;
-let prevPlayerY = 400; // Для отслеживания предыдущей позиции по Y
+let prevPlayerY = 400;   // Для отслеживания предыдущей позиции по Y
+
+// Система комбо для фруктов
+let fruitCombo = 0;              // Текущий множитель комбо
+let lastFruitTime = 0;           // Время сбора последнего фрукта
+const COMBO_WINDOW = 2000;       // Окно комбо: 2 секунды между сборами
+const MAX_COMBO = 5;             // Максимальный множитель комбо (x5)
+let comboTimer = null;           // Таймер для сброса комбо
+let comboDisplay = { active: false, timer: 0, value: 0 };  // Для отображения комбо
+
+// ==================== ТИПЫ ФРУКТОВ ====================
+// Разные фрукты дают разное количество очков и имеют разные визуальные эффекты
+const FRUIT_TYPES = {
+    APPLE: { id: 'apple', name: 'Яблоко', icon: '🍎', points: 10, color: '#FF4444' },
+    ORANGE: { id: 'orange', name: 'Апельсин', icon: '🍊', points: 15, color: '#FFA500' },
+    BANANA: { id: 'banana', name: 'Банан', icon: '🍌', points: 20, color: '#FFE135' },
+    STRAWBERRY: { id: 'strawberry', name: 'Клубника', icon: '🍓', points: 25, color: '#DC143C' },
+    CHERRY: { id: 'cherry', name: 'Вишня', icon: '🍒', points: 30, color: '#8B0000' },
+    GRAPES: { id: 'grapes', name: 'Виноград', icon: '🍇', points: 35, color: '#9370DB' },
+    WATERMELON: { id: 'watermelon', name: 'Арбуз', icon: '🍉', points: 40, color: '#FF6B6B' },
+    PINEAPPLE: { id: 'pineapple', name: 'Ананас', icon: '🍍', points: 50, color: '#FFD700' }
+};
+
+// Получить случайный тип фрукта
+function getRandomFruitType() {
+    const fruitKeys = Object.keys(FRUIT_TYPES);
+    const randomKey = fruitKeys[Math.floor(Math.random() * fruitKeys.length)];
+    return FRUIT_TYPES[randomKey];
+}
 
 // ==================== ФИЗИКА И КОЛЛИЗИИ ====================
 function updatePhysics() {
@@ -519,9 +558,39 @@ function updatePhysics() {
             p.type = newPlatformType;
             p.id = Math.random().toString(36).substr(2, 9); // Новый ID
             
+            // С шансом 50% создаём монету на платформе
             if (Math.random() < 0.5 && !newPlatformType.damage) {
                 coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
             }
+            
+            // С шансом 20% создаём фрукт рядом с платформой (только если платформа не шипы)
+            if (Math.random() < 0.2 && !newPlatformType.damage) {
+                const fruitType = getRandomFruitType();
+                fruits.push({ 
+                    x: p.x + p.width/2 - 12, 
+                    y: p.y - 40 - Math.random() * 30, 
+                    width: 24, 
+                    height: 24, 
+                    collected: false,
+                    type: fruitType,
+                    floatOffset: Math.random() * Math.PI * 2  // Для анимации парения
+                });
+            }
+        }
+    }
+    
+    // Обновление таймера комбо
+    const currentTime = Date.now();
+    if (fruitCombo > 0 && currentTime - lastFruitTime > COMBO_WINDOW) {
+        fruitCombo = 0;
+        comboDisplay.active = false;
+    }
+    
+    // Обновление отображения комбо
+    if (comboDisplay.active) {
+        comboDisplay.timer -= 16; // Примерно 60 FPS
+        if (comboDisplay.timer <= 0) {
+            comboDisplay.active = false;
         }
     }
     
@@ -698,7 +767,12 @@ function resetGameVariables() {
     player.vy = 0;
     prevPlayerY = 50;
     score = 0;
+    fruitScore = 0;
     gameTime = 0;
+    fruits = [];
+    fruitCombo = 0;
+    lastFruitTime = 0;
+    comboDisplay = { active: false, timer: 0, value: 0 };
     generatePlatforms();
     updateHUD();
 }
@@ -707,19 +781,38 @@ function updateHUD() {
     if (!currentLevelConfig) return;
 
     let text = "";
+    const totalScore = score + fruitScore;
+    
     if (currentLevelConfig.type === 'coins') {
         text = `🪙 ${score} / ${currentLevelConfig.target}`;
+        // Добавляем очки за фрукты отдельной строкой если они есть
+        if (fruitScore > 0) {
+            text += ` | 🍎 +${fruitScore}`;
+        }
     } else if (currentLevelConfig.type === 'jumps') {
         text = `🟩 Прыжки: ${score} / ${currentLevelConfig.target}`;
+        if (fruitScore > 0) {
+            text += ` | 🍎 +${fruitScore}`;
+        }
     } else if (currentLevelConfig.type === 'time') {
         text = `⏱️ ${Math.floor(gameTime)} / ${currentLevelConfig.target} сек`;
+        if (fruitScore > 0) {
+            text += ` | 🍎 +${fruitScore}`;
+        }
     } else {
-        text = `Счёт: ${score}`;
+        text = `Счёт: ${totalScore}`;
     }
+    
+    // Добавляем индикатор комбо если оно активно
+    if (comboDisplay.active && fruitCombo > 1) {
+        text += ` 🔥 x${fruitCombo}!`;
+    }
+    
     scoreElement.textContent = text;
 }
 
 // ==================== ДВИЖОК ИГРЫ ====================
+// Основной игровой цикл: обновление физики, отрисовка, обработка событий
 
 // Функция выбора типа платформы на основе настроек уровня
 function getRandomPlatformType() {
@@ -1117,6 +1210,72 @@ function gameLoop(timestamp) {
         }
     }
 
+    // Фрукты - сбор с комбо-системой
+    const currentTime = Date.now();
+    for (let i = fruits.length - 1; i >= 0; i--) {
+        let f = fruits[i];
+        
+        // Анимация парения фрукта
+        f.floatOffset += 0.05;
+        const floatY = Math.sin(f.floatOffset) * 3;
+        
+        // Проверка столкновения с игроком
+        if (!f.collected &&
+            player.x < f.x + f.width && player.x + player.width > f.x &&
+            player.y < f.y + floatY + f.height && player.y + player.height > f.y + floatY) {
+            
+            f.collected = true;
+            
+            // Расчёт комбо
+            const timeSinceLastFruit = currentTime - lastFruitTime;
+            if (timeSinceLastFruit < COMBO_WINDOW) {
+                // Игрок собрал фрукт быстро - увеличиваем комбо
+                fruitCombo = Math.min(fruitCombo + 1, MAX_COMBO);
+            } else {
+                // Прошло много времени - сбрасываем комбо до 1
+                fruitCombo = 1;
+            }
+            
+            lastFruitTime = currentTime;
+            
+            // Расчёт очков с учётом комбо
+            const basePoints = f.type.points;
+            const comboBonus = basePoints * (fruitCombo - 1); // Бонус за комбо
+            const totalPoints = basePoints + comboBonus;
+            
+            fruitScore += totalPoints;
+            updateHUD();
+            
+            // Показываем индикатор комбо
+            comboDisplay.active = true;
+            comboDisplay.timer = 1500; // Показывать 1.5 секунды
+            comboDisplay.value = fruitCombo;
+            
+            // Звук сбора фрукта (более высокий тон чем у монеты)
+            if (audioCtx && allSoundEnabled) {
+                const oscillator = audioCtx.createOscillator();
+                const gainNode = audioCtx.createGain();
+                oscillator.connect(gainNode);
+                gainNode.connect(audioCtx.destination);
+                oscillator.type = 'sine';
+                oscillator.frequency.setValueAtTime(1200 + fruitCombo * 100, audioCtx.currentTime);
+                oscillator.frequency.exponentialRampToValueAtTime(1800, audioCtx.currentTime + 0.1);
+                gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+                oscillator.start(audioCtx.currentTime);
+                oscillator.stop(audioCtx.currentTime + 0.2);
+            }
+            
+            fruits.splice(i, 1);
+        } else if (!f.collected) {
+            // Фрукт движется вниз вместе с платформами
+            f.y += moveSpeed;
+            if (f.y > canvas.height) {
+                fruits.splice(i, 1);
+            }
+        }
+    }
+
     // Обновляем анимированные монеты
     for (let i = animatedCoins.length - 1; i >= 0; i--) {
         let ac = animatedCoins[i];
@@ -1136,6 +1295,9 @@ function gameLoop(timestamp) {
     drawGameObjects();
     if (gameRunning) animationId = requestAnimationFrame(gameLoop);
 }
+
+// ==================== ОТРИСОВКА ИГРОВЫХ ОБЪЕКТОВ ====================
+// Рендеринг всех игровых объектов: платформы, монеты, фрукты, игрок, эффекты
 
 function drawGameObjects() {
     // Отрисовка платформ с учетом их типа
@@ -1189,6 +1351,43 @@ function drawGameObjects() {
         if(!c.collected) { ctx.beginPath(); ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); ctx.fill(); }
     }
     
+    // Рисуем фрукты с анимацией парения и разными цветами
+    const time = Date.now() * 0.001;
+    for (let f of fruits) {
+        if (!f.collected) {
+            const floatY = Math.sin(f.floatOffset) * 3;
+            const centerX = f.x + f.width / 2;
+            const centerY = f.y + floatY + f.height / 2;
+            
+            // Свечение вокруг фрукта
+            const gradient = ctx.createRadialGradient(centerX, centerY, 5, centerX, centerY, 20);
+            gradient.addColorStop(0, f.type.color + '60'); // 60 - прозрачность в hex
+            gradient.addColorStop(1, 'transparent');
+            ctx.fillStyle = gradient;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 20, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Основной цвет фрукта
+            ctx.fillStyle = f.type.color;
+            ctx.beginPath();
+            ctx.arc(centerX, centerY, 10, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Блик на фрукте
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.beginPath();
+            ctx.arc(centerX - 3, centerY - 3, 3, 0, Math.PI * 2);
+            ctx.fill();
+            
+            // Листик сверху
+            ctx.fillStyle = '#4CAF50';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY - 12, 4, 2, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+    }
+    
     // Рисуем анимированные монеты, летящие к счетчику
     for (let ac of animatedCoins) {
         ctx.save();
@@ -1216,7 +1415,36 @@ function drawGameObjects() {
     ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); ctx.fill();
     ctx.fillStyle = 'black';
     ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); ctx.fill();
+    
+    // Отрисовка индикатора комбо (визуальный эффект поверх игры)
+    if (comboDisplay.active && fruitCombo > 1) {
+        ctx.save();
+        ctx.font = 'bold 36px Arial';
+        ctx.textAlign = 'center';
+        
+        // Пульсирующий текст комбо
+        const pulse = 1 + Math.sin(Date.now() * 0.01) * 0.2;
+        ctx.translate(canvas.width / 2, 100);
+        ctx.scale(pulse, pulse);
+        
+        // Тень текста
+        ctx.fillStyle = 'rgba(255, 100, 0, 0.5)';
+        ctx.fillText(`🔥 x${fruitCombo} COMBO!`, 4, 4);
+        
+        // Основной текст с градиентом
+        const comboGradient = ctx.createLinearGradient(-60, -20, 60, 20);
+        comboGradient.addColorStop(0, '#FFD700');
+        comboGradient.addColorStop(0.5, '#FF6B35');
+        comboGradient.addColorStop(1, '#FF4500');
+        ctx.fillStyle = comboGradient;
+        ctx.fillText(`🔥 x${fruitCombo} COMBO!`, 0, 0);
+        
+        ctx.restore();
+    }
 }
+
+// ==================== УПРАВЛЕНИЕ ИГРОКОМ ====================
+// Обработка ввода: касания, мышь, клавиатура
 
 function jump() {
     if (gameRunning && player.onGround) {
