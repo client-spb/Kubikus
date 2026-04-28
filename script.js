@@ -378,6 +378,11 @@ function playTone(type) {
 // Игровая логика
 const GRAVITY = 0.6;
 const JUMP_FORCE = -13;
+
+// НАСТРОЙКИ ДЛЯ СТАБИЛЬНЫХ ПРЫЖКОВ (виртуальные коллайдеры)
+const VIRTUAL_MARGIN = 6; // Расширение коллайдеров (в пикселях)
+const SNAP_THRESHOLD = 8; // Дистанция "примагничивания" к платформе
+
 let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, onGround: false };
 let platforms = [];
 let coins = [];
@@ -390,6 +395,142 @@ let animationId;
 let touchX = player.x;
 let isTouching = false;
 let prevPlayerY = 400; // Для отслеживания предыдущей позиции по Y
+
+// ==================== ФИЗИКА И КОЛЛИЗИИ ====================
+function updatePhysics() {
+    if (!gameRunning) return;
+
+    // Управление движением влево/вправо
+    if (isTouching) {
+        const dx = touchX - (player.x + player.width / 2);
+        player.x += dx * 0.15;
+    }
+
+    // Применяем гравитацию
+    player.vy += GRAVITY;
+    
+    // Сохраняем предыдущую позицию перед движением по Y
+    const prevY = player.y;
+    const prevBottom = prevY + player.height;
+    
+    // Движение по оси Y
+    player.y += player.vy;
+    
+    // Wrap-around по горизонтали
+    if (player.x + player.width < 0) player.x = canvas.width;
+    if (player.x > canvas.width) player.x = -player.width;
+
+    const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
+    const moveSpeed = 1.5 * speedMultiplier;
+    
+    // Для параллакс-эффекта фон движется медленнее
+    bgParallaxSpeed = moveSpeed * 0.3;
+
+    // Сбрасываем флаг приземления перед проверкой коллизий
+    player.onGround = false;
+    
+    // Отладочные логи для диагностики прыжков
+    const debugLogs = [];
+
+    for (let p of platforms) {
+        p.y += moveSpeed;
+        
+        // Создаем уникальный ID для платформы
+        if (!p.id) {
+            p.id = Math.random().toString(36).substr(2, 9);
+        }
+        
+        // Проверка столкновения с платформой
+        const platformTop = p.y;
+        
+        // === ВИРТУАЛЬНЫЕ КОЛЛАЙДЕРЫ ===
+        // Считаем низ игрока ниже реального, а верх платформы выше реального
+        const virtualPlayerBottom = player.y + player.height + VIRTUAL_MARGIN;
+        const virtualPlatformTop = platformTop - VIRTUAL_MARGIN;
+        
+        // Текущий и предыдущий низ игрока (реальные значения)
+        const currentBottom = player.y + player.height;
+        
+        // Проверка перекрытия по горизонтали (с небольшими отступами для надежности)
+        const horizontalOverlap = (player.x + player.width > p.x + 5) && (player.x < p.x + p.width - 5);
+        
+        if (horizontalOverlap) {
+            // УСЛОВИЕ ПРИЗЕМЛЕНИЯ:
+            // 1. Мы были выше платформы в прошлом кадре (или на ней)
+            // 2. Сейчас мы пересекли виртуальную границу платформы
+            // 3. Мы не провалились глубоко под платформу
+            
+            const wasAboveOrOn = prevBottom <= platformTop + 5;
+            const isTouchingVirtual = virtualPlayerBottom >= virtualPlatformTop;
+            const notClippingDeep = currentBottom < platformTop + p.height;
+            
+            // Проверяем, что падали вниз или имели нулевую скорость
+            const fallingOrStill = player.vy >= 0;
+            
+            if (fallingOrStill && wasAboveOrOn && isTouchingVirtual && notClippingDeep) {
+                debugLogs.push(`COLLISION: vy=${player.vy.toFixed(2)}, prevBottom=${prevBottom.toFixed(1)}, platformTop=${platformTop.toFixed(1)}`);
+
+                // Проверка на шипы - мгновенная смерть
+                if (p.type && p.type.damage) {
+                    finishLevel(false);
+                    return;
+                }
+
+                // === КОРРЕКЦИЯ ПОЗИЦИИ (ПРИМАГНИЧИВАНИЕ) ===
+                // Вычисляем дистанцию до платформы
+                const distanceToPlatform = platformTop - currentBottom;
+                
+                // Если очень близко (в пределах порога), жестко ставим на платформу
+                if (distanceToPlatform > -SNAP_THRESHOLD && distanceToPlatform < SNAP_THRESHOLD) {
+                    player.y = platformTop - player.height; // Точное выравнивание
+                    player.vy = 0; // Полностью гасим скорость
+                    player.onGround = true;
+                } else if (player.vy >= 0) {
+                    // Если провалились глубже порога, но все еще падали - тоже приземляем
+                    player.y = platformTop - player.height;
+                    player.vy = 0;
+                    player.onGround = true;
+                }
+                
+                if (player.onGround) {
+                    // Воспроизводим звук приземления (тихий)
+                    playSound('land');
+                    debugLogs.push(`LANDED on platform ${p.id}`);
+
+                    // Логика для уровня "Прыжки" (Тип 3)
+                    // Считаем только новые платформы
+                    if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
+                        landedPlatforms.add(p.id);
+                        score++;
+                        updateHUD();
+                        checkWinCondition();
+                    }
+                }
+            }
+        }
+        
+        // Респаун платформ, ушедших за экран
+        if (p.y > canvas.height) {
+            p.y = -20;
+            p.x = Math.random() * (canvas.width - p.width);
+            p.width = 80 + Math.random() * 30;
+            // При респауне выбираем новый тип платформы
+            const newPlatformType = getRandomPlatformType();
+            p.type = newPlatformType;
+            p.id = Math.random().toString(36).substr(2, 9); // Новый ID
+            
+            if (Math.random() < 0.5 && !newPlatformType.damage) {
+                coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
+            }
+        }
+    }
+    
+    // Вывод отладочных логов в консоль
+    if (debugLogs.length > 0) {
+        console.log(`[Frame ${performance.now().toFixed(0)}] onGround=${player.onGround}, vy=${player.vy.toFixed(2)}`);
+        debugLogs.forEach(log => console.log(`  ${log}`));
+    }
+}
 
 // ==================== ИНТЕРФЕЙС ====================
 
@@ -937,103 +1078,8 @@ function gameLoop(timestamp) {
     }
     lastTime = timestamp;
 
-    if (isTouching) {
-        const dx = touchX - (player.x + player.width / 2);
-        player.x += dx * 0.15;
-    }
-
-    player.vy += GRAVITY;
-    
-    // Сохраняем предыдущую позицию перед движением
-    prevPlayerY = player.y;
-    
-    player.y += player.vy;
-    if (player.x + player.width < 0) player.x = canvas.width;
-    if (player.x > canvas.width) player.x = -player.width;
-
-    const speedMultiplier = currentLevelConfig ? currentLevelConfig.speedMod : 1.0;
-    const moveSpeed = 1.5 * speedMultiplier; // Скорость движения платформ вниз
-    
-    // Для параллакс-эффекта фон движется медленнее
-    bgParallaxSpeed = moveSpeed * 0.3;
-
-    player.onGround = false;
-    
-    // Отладочные логи для диагностики прыжков
-    const debugLogs = [];
-
-    for (let p of platforms) {
-        p.y += moveSpeed;
-        
-        // Создаем уникальный ID для платформы
-        if (!p.id) {
-            p.id = Math.random().toString(36).substr(2, 9);
-        }
-        
-        // Проверка столкновения с платформой
-        const playerBottom = player.y + player.height;
-        const platformTop = p.y;
-        const prevBottom = prevPlayerY + player.height;
-        
-        // Упрощенная и надежная проверка приземления:
-        // 1. Игрок падал вниз или имел нулевую скорость (vy >= 0)
-        // 2. Есть перекрытие по горизонтали (с небольшим отступом)
-        // 3. Низ игрока сейчас на уровне или ниже верха платформы
-        // 4. В предыдущем кадре игрок был выше платформы (или на её уровне)
-        const horizontalOverlap = (player.x + player.width > p.x + 5) && (player.x < p.x + p.width - 5);
-        const fallingOrStill = player.vy >= 0;
-        const bottomAtOrBelowTop = playerBottom >= platformTop;
-        const wasAboveOrAtTop = prevBottom <= platformTop + 20;
-        
-        if (fallingOrStill && horizontalOverlap && bottomAtOrBelowTop && wasAboveOrAtTop) {
-            debugLogs.push(`COLLISION: vy=${player.vy.toFixed(2)}, prevBottom=${prevBottom.toFixed(1)}, platformTop=${platformTop.toFixed(1)}`);
-
-            // Проверка на шипы - мгновенная смерть
-            if (p.type && p.type.damage) {
-                finishLevel(false);
-                return;
-            }
-
-            player.y = p.y - player.height;
-            player.vy = 0;
-            player.onGround = true;
-
-            // Воспроизводим звук приземления (тихий)
-            playSound('land');
-            
-            debugLogs.push(`LANDED on platform ${p.id}`);
-
-            // Логика для уровня "Прыжки" (Тип 3)
-            // Считаем только новые платформы
-            if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
-                landedPlatforms.add(p.id);
-                score++;
-                updateHUD();
-                checkWinCondition();
-            }
-        }
-        
-        // Респаун платформ, ушедших за экран
-        if (p.y > canvas.height) {
-            p.y = -20;
-            p.x = Math.random() * (canvas.width - p.width);
-            p.width = 80 + Math.random() * 30;
-            // При респауне выбираем новый тип платформы
-            const newPlatformType = getRandomPlatformType();
-            p.type = newPlatformType;
-            p.id = Math.random().toString(36).substr(2, 9); // Новый ID
-            
-            if (Math.random() < 0.5 && !newPlatformType.damage) {
-                coins.push({ x: p.x + p.width/2 - 10, y: p.y - 30, width: 20, height: 20, collected: false });
-            }
-        }
-    }
-    
-    // Вывод отладочных логов в консоль
-    if (debugLogs.length > 0) {
-        console.log(`[Frame ${performance.now().toFixed(0)}] onGround=${player.onGround}, vy=${player.vy.toFixed(2)}`);
-        debugLogs.forEach(log => console.log(`  ${log}`));
-    }
+    // Вызываем функцию физики и коллизий
+    updatePhysics();
 
     // Монетки
     for (let i = coins.length - 1; i >= 0; i--) {
