@@ -32,10 +32,112 @@ body {
 
 canvas {
     display: block;
-    background: linear-gradient(to bottom, #a8edea 0%, #fed6e3 50%, #fbc2eb 100%);
+    background: transparent;
     width: 100%;
     height: 100%;
     image-rendering: pixelated;
+}
+
+/* Анимированный задний фон */
+#animated-bg {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    overflow: hidden;
+    pointer-events: none;
+}
+
+.bg-layer {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center;
+    opacity: 0.6;
+}
+
+.bg-gradient {
+    background: linear-gradient(180deg, 
+        #ffecd2 0%, 
+        #fcb69f 25%, 
+        #ffecd2 50%, 
+        #a8edea 75%, 
+        #fed6e3 100%);
+    background-size: 400% 400%;
+    animation: gradientMove 15s ease infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+.bg-particles {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255,255,255,0.8) 0%, transparent 50%),
+        radial-gradient(circle at 80% 70%, rgba(255,255,255,0.6) 0%, transparent 40%),
+        radial-gradient(circle at 40% 80%, rgba(255,255,255,0.7) 0%, transparent 60%),
+        radial-gradient(circle at 60% 20%, rgba(255,255,255,0.5) 0%, transparent 30%);
+    background-size: 200% 200%;
+    animation: particleFloat 20s ease-in-out infinite;
+}
+
+@keyframes particleFloat {
+    0%, 100% { transform: translateY(0) rotate(0deg); opacity: 0.5; }
+    33% { transform: translateY(-30px) rotate(5deg); opacity: 0.7; }
+    66% { transform: translateY(20px) rotate(-5deg); opacity: 0.6; }
+}
+
+.bg-shapes {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+}
+
+.shape {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(254, 202, 87, 0.3));
+    filter: blur(20px);
+    animation: shapeFloat 25s ease-in-out infinite;
+}
+
+.shape:nth-child(1) {
+    width: 200px;
+    height: 200px;
+    top: 10%;
+    left: -50px;
+    animation-delay: 0s;
+}
+
+.shape:nth-child(2) {
+    width: 150px;
+    height: 150px;
+    bottom: 20%;
+    right: -40px;
+    animation-delay: -8s;
+}
+
+.shape:nth-child(3) {
+    width: 100px;
+    height: 100px;
+    top: 50%;
+    left: 50%;
+    animation-delay: -15s;
+}
+
+@keyframes shapeFloat {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(30px, -40px) scale(1.1); }
+    50% { transform: translate(-20px, 30px) scale(0.9); }
+    75% { transform: translate(40px, 20px) scale(1.05); }
 }
 
 /* HUD */
@@ -369,75 +471,22 @@ canvas {
     text-shadow: 0 2px 4px rgba(225, 112, 85, 0.3);
 }
 
-/* Анимированный фон с облаками */
-.cloud-bg {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 0;
-    pointer-events: none;
-}
-
-.cloud {
-    position: absolute;
-    background: rgba(255, 255, 255, 0.6);
-    border-radius: 50%;
-    filter: blur(15px);
-    animation: cloudFloat 20s infinite;
-}
-
-.cloud:nth-child(1) {
-    width: 200px;
-    height: 200px;
-    top: 10%;
-    left: -10%;
-    animation-delay: 0s;
-    animation-duration: 25s;
-}
-
-.cloud:nth-child(2) {
-    width: 150px;
-    height: 150px;
-    top: 60%;
-    right: -5%;
-    animation-delay: -10s;
-    animation-duration: 30s;
-}
-
-.cloud:nth-child(3) {
-    width: 100px;
-    height: 100px;
-    top: 30%;
-    right: 20%;
-    animation-delay: -5s;
-    animation-duration: 20s;
-}
-
-@keyframes cloudFloat {
-    0%, 100% { transform: translate(0, 0) rotate(0deg); }
-    33% { transform: translate(30px, -20px) rotate(5deg); }
-    66% { transform: translate(-20px, 30px) rotate(-5deg); }
-}
-
-/* Декоративные элементы */
-.deco-circle {
+/* Декоративные элементы для экранов меню */
+.menu-deco-circle {
     position: absolute;
     border-radius: 50%;
     background: linear-gradient(135deg, rgba(255, 107, 107, 0.4), rgba(254, 202, 87, 0.4));
     animation: pulse 4s ease-in-out infinite;
 }
 
-.deco-circle:nth-child(4) {
+.menu-deco-circle:nth-child(6) {
     width: 300px;
     height: 300px;
     top: -150px;
     right: -150px;
 }
 
-.deco-circle:nth-child(5) {
+.menu-deco-circle:nth-child(7) {
     width: 200px;
     height: 200px;
     bottom: -100px;
