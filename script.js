@@ -1145,12 +1145,34 @@ function jump() {
 }
 
 // Обработчики ввода
+function handleInput(x, y) {
+    if (!gameRunning) return;
+    
+    // Проверяем, кликнули ли по платформе
+    let clickedOnPlatform = false;
+    const rect = canvas.getBoundingClientRect();
+    const canvasX = x - rect.left;
+    const canvasY = y - rect.top;
+    
+    for (let p of platforms) {
+        if (canvasX >= p.x && canvasX <= p.x + p.width &&
+            canvasY >= p.y && canvasY <= p.y + p.height) {
+            clickedOnPlatform = true;
+            break;
+        }
+    }
+    
+    // Прыгаем только если не кликнули по платформе и игрок на земле
+    if (!clickedOnPlatform) {
+        isTouching = true;
+        touchX = canvasX;
+        jump();
+    }
+}
+
 canvas.addEventListener('touchstart', e => {
     e.preventDefault();
-    if (!gameRunning) return;
-    isTouching = true;
-    touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
-    jump();
+    handleInput(e.touches[0].clientX, e.touches[0].clientY);
 }, {passive: false});
 
 canvas.addEventListener('touchmove', e => {
@@ -1162,10 +1184,7 @@ canvas.addEventListener('touchmove', e => {
 canvas.addEventListener('touchend', () => isTouching = false);
 
 canvas.addEventListener('mousedown', e => {
-    if (!gameRunning) return;
-    isTouching = true;
-    touchX = e.offsetX;
-    jump();
+    handleInput(e.clientX, e.clientY);
 });
 canvas.addEventListener('mousemove', e => { if(isTouching) touchX = e.offsetX; });
 canvas.addEventListener('mouseup', () => isTouching = false);
