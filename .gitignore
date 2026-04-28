@@ -1,20 +1,22 @@
-```
+```gitignore
 # Compiled and build artifacts
 *.pyc
 __pycache__/
 *.o
 *.obj
-dist/
-build/
-target/
+*.exe
+*.dll
+*.so
+*.a
+*.out
 
 # Dependencies
-.venv/
-venv/
 node_modules/
-.julia/
-zig-cache/
-.deps/
+venv/
+.venv/
+.env
+.env.local
+.env.*
 
 # Logs and temp files
 *.log
@@ -22,18 +24,11 @@ zig-cache/
 *.swp
 *.swo
 
-# Environment
-.env
-.env.local
-.env.*
-
 # Editors
 .vscode/
 .idea/
-*.swp
-*.swo
 
-# OS
+# System files
 .DS_Store
 Thumbs.db
 
