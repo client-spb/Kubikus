@@ -1331,7 +1331,7 @@ function gameLoop(timestamp) {
             player.y < c.y + c.height && player.y + player.height > c.y) {
             c.collected = true;
             // Создаем анимированную монету для полета к счетчику
-            const scoreHudRect = scoreElement.getBoundingClientRect();
+            const scoreHudRect = scorePointsDisplay.getBoundingClientRect();
             const canvasRect = canvas.getBoundingClientRect();
             animatedCoins.push({
                 x: c.x,
