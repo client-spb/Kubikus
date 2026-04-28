@@ -417,7 +417,10 @@ function drawClouds() {
 function drawGameObjects() {
     ctx.fillStyle = '#66BB6A';
     for (let p of platforms) {
-        ctx.fillRect(p.x, p.y, p.width, p.height);
+        const radius = Math.min(8, p.height / 2);
+        ctx.beginPath();
+        ctx.roundRect(p.x, p.y, p.width, p.height, radius);
+        ctx.fill();
     }
     ctx.fillStyle = '#FFD700';
     for (let c of coins) {
