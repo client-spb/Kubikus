@@ -182,7 +182,19 @@ function playTone(type) {
 // Игровая логика
 const GRAVITY = 0.6;
 const JUMP_FORCE = -13;
-let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, jumping: false };
+let player = { 
+    x: 180, 
+    y: 400, 
+    width: 30, 
+    height: 40, 
+    vy: 0, 
+    jumping: false,
+    // Параметры для анимации смерти
+    deathAnim: false,
+    deathTimer: 0,
+    eyeScale: 1,
+    pupilOffset: { left: 0, right: 0 }
+};
 let platforms = [];
 let coins = [];
 let animatedCoins = []; // Монеты для анимации полета к счетчику
@@ -341,6 +353,11 @@ function resetGameVariables() {
     player.x = canvas.width / 2 - 15;
     player.y = 400;
     player.vy = 0;
+    // Сброс параметров анимации смерти
+    player.deathAnim = false;
+    player.deathTimer = 0;
+    player.eyeScale = 1;
+    player.pupilOffset = { left: 0, right: 0 };
     score = 0;
     gameTime = 0;
     generatePlatforms();
@@ -706,6 +723,32 @@ function gameLoop(timestamp) {
     }
     lastTime = timestamp;
 
+    // Если идет анимация смерти - обновляем её и не обрабатываем обычную физику
+    if (player.deathAnim) {
+        player.deathTimer += (timestamp - lastTime) / 1000;
+        
+        // Анимация раздувания глаз и смещения зрачков
+        const animProgress = Math.min(player.deathTimer / 1.0, 1); // 1 секунда анимации
+        
+        // Глаза раздуваются от 1 до 2.5
+        player.eyeScale = 1 + animProgress * 1.5;
+        
+        // Зрачки становятся косыми (левый вправо-вверх, правый влево-вверх)
+        player.pupilOffset.left = { x: animProgress * 4, y: -animProgress * 3 };
+        player.pupilOffset.right = { x: -animProgress * 4, y: -animProgress * 3 };
+        
+        // После 1 секунды показываем меню
+        if (player.deathTimer >= 1.0) {
+            finishLevel(false);
+            return;
+        }
+        
+        // Во время анимации смерти игрок не управляется и не падает
+        drawGameObjects();
+        animationId = requestAnimationFrame(gameLoop);
+        return;
+    }
+
     if (isTouching) {
         const dx = touchX - (player.x + player.width / 2);
         player.x += dx * 0.15;
@@ -738,9 +781,16 @@ function gameLoop(timestamp) {
             player.y + player.height > p.y &&
             player.y + player.height - player.vy <= p.y + 10) {
 
-            // Проверка на шипы - мгновенная смерть
+            // Проверка на шипы - мгновенная смерть с анимацией
             if (p.type && p.type.damage) {
-                finishLevel(false);
+                if (!player.deathAnim) {
+                    player.deathAnim = true;
+                    player.deathTimer = 0;
+                    // Перемещаем игрока на середину экрана
+                    player.x = canvas.width / 2 - player.width / 2;
+                    player.y = canvas.height / 2 - player.height / 2;
+                    player.vy = 0;
+                }
                 return;
             }
 
@@ -818,7 +868,17 @@ function gameLoop(timestamp) {
         }
     }
 
-    if (player.y > canvas.height) finishLevel(false);
+    if (player.y > canvas.height) {
+        // Начинаем анимацию смерти
+        if (!player.deathAnim) {
+            player.deathAnim = true;
+            player.deathTimer = 0;
+            // Быстро перемещаем игрока на середину экрана
+            player.x = canvas.width / 2 - player.width / 2;
+            player.y = canvas.height / 2 - player.height / 2;
+            player.vy = 0;
+        }
+    }
 
     drawGameObjects();
     if (gameRunning) animationId = requestAnimationFrame(gameLoop);
@@ -899,10 +959,32 @@ function drawGameObjects() {
     // Герой
     ctx.fillStyle = '#FF5722';
     ctx.fillRect(player.x, player.y, player.width, player.height);
+    
+    // Рисуем глаза с учетом анимации смерти
+    const eyeBaseY = player.y + 12;
+    const leftEyeX = player.x + 10;
+    const rightEyeX = player.x + 20;
+    
+    // Белки глаз (раздуваются при смерти)
     ctx.fillStyle = 'white';
-    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); ctx.fill();
+    const leftEyeRadius = 5 * player.eyeScale;
+    const rightEyeRadius = 5 * player.eyeScale;
+    ctx.beginPath(); 
+    ctx.arc(leftEyeX, eyeBaseY, leftEyeRadius, 0, Math.PI*2); 
+    ctx.arc(rightEyeX, eyeBaseY, rightEyeRadius, 0, Math.PI*2); 
+    ctx.fill();
+    
+    // Зрачки (становятся косыми при смерти)
     ctx.fillStyle = 'black';
-    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); ctx.fill();
+    const leftPupilX = leftEyeX + player.pupilOffset.left.x;
+    const leftPupilY = eyeBaseY + player.pupilOffset.left.y;
+    const rightPupilX = rightEyeX + player.pupilOffset.right.x;
+    const rightPupilY = eyeBaseY + player.pupilOffset.right.y;
+    const pupilRadius = 2 * player.eyeScale;
+    ctx.beginPath(); 
+    ctx.arc(leftPupilX, leftPupilY, pupilRadius, 0, Math.PI*2); 
+    ctx.arc(rightPupilX, rightPupilY, pupilRadius, 0, Math.PI*2); 
+    ctx.fill();
 }
 
 function jump() {
