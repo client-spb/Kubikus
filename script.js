@@ -117,43 +117,49 @@ let maxUnlockedLevel = parseInt(localStorage.getItem('jumpSkok_maxLevel')) || 1;
 let selectedLevelId = null;
 let currentLevelConfig = null;
 
-// Аудио - загрузка звуковых файлов
-const sounds = {
-    jump: new Audio('assets/sounds/jump.wav'),
-    coin: new Audio('assets/sounds/coin.wav'),
-    die: new Audio('assets/sounds/die.wav'),
-    win: new Audio('assets/sounds/win.wav')
-};
+// ==================== АУДИО СИСТЕМА ====================
+// Используем Web Audio API для качественных синтезированных звуков
+// и фоновой музыки
 
-// Настройка громкости и зацикливания
-Object.values(sounds).forEach(sound => {
-    sound.volume = 0.4;
-    sound.preload = 'auto';
-});
+let audioCtx = null;
+let bgmSource = null;
+let bgmGain = null;
+let isBgmPlaying = false;
 
-// Состояние звука (включен/выключен)
-let soundEnabled = localStorage.getItem('jumpSkok_soundEnabled') !== 'false';
-
-// Функция воспроизведения звука
-function playSound(type) {
-    if (!soundEnabled) return;
-    
-    const sound = sounds[type];
-    if (sound) {
-        // Сбрасываем на начало для быстрого повторного воспроизведения
-        sound.currentTime = 0;
-        sound.play().catch(e => console.log('Звук не воспроизведен:', e));
+// Инициализация аудио контекста
+function initAudio() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
     }
 }
 
-// Функция переключения звука
+// Состояние звука (включен/выключен)
+let soundEnabled = localStorage.getItem('jumpSkok_soundEnabled') !== 'false';
+let bgmEnabled = localStorage.getItem('jumpSkok_bgmEnabled') === 'true';
+
+// Функция переключения звука эффектов
 function toggleSound() {
     soundEnabled = !soundEnabled;
     localStorage.setItem('jumpSkok_soundEnabled', soundEnabled);
     updateSoundIcon();
 }
 
-// Обновление иконки звука
+// Функция переключения фоновой музыки
+function toggleBGM() {
+    bgmEnabled = !bgmEnabled;
+    localStorage.setItem('jumpSkok_bgmEnabled', bgmEnabled);
+    updateBgmIcon();
+    if (bgmEnabled && gameRunning) {
+        startBGM();
+    } else {
+        stopBGM();
+    }
+}
+
+// Обновление иконки звука эффектов
 function updateSoundIcon() {
     const soundIcon = document.getElementById('soundIcon');
     const soundBtn = document.getElementById('soundToggleBtn');
@@ -161,21 +167,273 @@ function updateSoundIcon() {
     if (soundEnabled) {
         soundIcon.textContent = '🔊';
         soundBtn.classList.remove('muted');
-        soundBtn.title = 'Выключить звук';
+        soundBtn.title = 'Выключить звук эффектов';
     } else {
         soundIcon.textContent = '🔇';
         soundBtn.classList.add('muted');
-        soundBtn.title = 'Включить звук';
+        soundBtn.title = 'Включить звук эффектов';
     }
 }
 
-// Инициализация состояния звука при загрузке
-updateSoundIcon();
+// Обновление иконки фоновой музыки
+function updateBgmIcon() {
+    const bgmIcon = document.getElementById('bgmIcon');
+    const bgmBtn = document.getElementById('bgmToggleBtn');
+    
+    if (bgmIcon && bgmBtn) {
+        if (bgmEnabled) {
+            bgmIcon.textContent = '🎵';
+            bgmBtn.classList.remove('muted');
+            bgmBtn.title = 'Выключить фоновую музыку';
+        } else {
+            bgmIcon.textContent = '🔇';
+            bgmBtn.classList.add('muted');
+            bgmBtn.title = 'Включить фоновую музыку';
+        }
+    }
+}
 
-// Старая функция playTone остается для совместимости, но теперь используем playSound
-const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+// ==================== СИНТЕЗИРОВАННЫЕ ЗВУКИ ====================
+
+// Звук прыжка - короткий восходящий тон
+function playJumpSound() {
+    if (!soundEnabled || !audioCtx) return;
+    
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.frequency.setValueAtTime(300, audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(600, audioCtx.currentTime + 0.1);
+    
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.1);
+}
+
+// Звук сбора монеты - приятный звонкий звук
+function playCoinSound() {
+    if (!soundEnabled || !audioCtx) return;
+    
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sine';
+    oscillator.frequency.setValueAtTime(880, audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(1760, audioCtx.currentTime + 0.15);
+    
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.3);
+    
+    // Добавляем второй тон для гармонии
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.type = 'sine';
+    osc2.frequency.setValueAtTime(1100, audioCtx.currentTime);
+    gain2.gain.setValueAtTime(0.15, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.2);
+    osc2.start(audioCtx.currentTime);
+    osc2.stop(audioCtx.currentTime + 0.2);
+}
+
+// Звук проигрыша - нисходящий неприятный аккорд
+function playDeathSound() {
+    if (!soundEnabled || !audioCtx) return;
+    
+    // Базовый тон
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.type = 'sawtooth';
+    oscillator.frequency.setValueAtTime(200, audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.5);
+    
+    gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.5);
+    
+    // Второй тон для диссонанса
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(180, audioCtx.currentTime);
+    osc2.frequency.exponentialRampToValueAtTime(45, audioCtx.currentTime + 0.5);
+    gain2.gain.setValueAtTime(0.2, audioCtx.currentTime);
+    gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+    osc2.start(audioCtx.currentTime);
+    osc2.stop(audioCtx.currentTime + 0.5);
+}
+
+// Звук победы - мажорный аккорд
+function playWinSound() {
+    if (!soundEnabled || !audioCtx) return;
+    
+    const notes = [523.25, 659.25, 783.99, 1046.50]; // C major arpeggio
+    
+    notes.forEach((freq, i) => {
+        const oscillator = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        
+        oscillator.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+        
+        oscillator.type = 'sine';
+        oscillator.frequency.value = freq;
+        
+        const startTime = audioCtx.currentTime + i * 0.1;
+        gainNode.gain.setValueAtTime(0, startTime);
+        gainNode.gain.linearRampToValueAtTime(0.25, startTime + 0.05);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, startTime + 0.4);
+        
+        oscillator.start(startTime);
+        oscillator.stop(startTime + 0.5);
+    });
+}
+
+// Звук приземления на платформу (тихий)
+function playLandSound() {
+    if (!soundEnabled || !audioCtx) return;
+    
+    const oscillator = audioCtx.createOscillator();
+    const gainNode = audioCtx.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioCtx.destination);
+    
+    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
+    oscillator.frequency.exponentialRampToValueAtTime(100, audioCtx.currentTime + 0.05);
+    
+    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.05);
+    
+    oscillator.start(audioCtx.currentTime);
+    oscillator.stop(audioCtx.currentTime + 0.05);
+}
+
+// ==================== ФОНОВАЯ МУЗЫКА ====================
+
+// Простая мелодия в стиле 8-бит
+function createBGMMelody() {
+    if (!audioCtx) return null;
+    
+    const melody = [
+        // Мелодия в тональности C мажор
+        { freq: 523.25, dur: 0.2 }, // C5
+        { freq: 587.33, dur: 0.2 },  // D5
+        { freq: 659.25, dur: 0.2 },  // E5
+        { freq: 523.25, dur: 0.2 },  // C5
+        { freq: 659.25, dur: 0.3 },  // E5
+        { freq: 587.33, dur: 0.2 },  // D5
+        { freq: 523.25, dur: 0.2 },  // C5
+        { freq: 440.00, dur: 0.4 },  // A4
+        { freq: 493.88, dur: 0.2 },  // B4
+        { freq: 523.25, dur: 0.2 },  // C5
+        { freq: 587.33, dur: 0.2 },  // D5
+        { freq: 523.25, dur: 0.3 },  // C5
+        { freq: 440.00, dur: 0.2 },  // A4
+        { freq: 392.00, dur: 0.2 },  // G4
+        { freq: 392.00, dur: 0.2 },  // G4
+        { freq: 440.00, dur: 0.4 },  // A4
+    ];
+    
+    return melody;
+}
+
+function startBGM() {
+    if (!bgmEnabled || !audioCtx || isBgmPlaying) return;
+    
+    isBgmPlaying = true;
+    bgmGain = audioCtx.createGain();
+    bgmGain.connect(audioCtx.destination);
+    bgmGain.gain.value = 0.15; // Тихая громкость для фона
+    
+    const melody = createBGMMelody();
+    let currentTime = audioCtx.currentTime;
+    const loopDuration = melody.reduce((sum, note) => sum + note.dur, 0);
+    
+    function playLoop() {
+        if (!isBgmPlaying || !bgmEnabled) return;
+        
+        melody.forEach(note => {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(bgmGain);
+            
+            oscillator.type = 'square';
+            oscillator.frequency.value = note.freq;
+            
+            gainNode.gain.setValueAtTime(0, currentTime);
+            gainNode.gain.linearRampToValueAtTime(0.1, currentTime + 0.02);
+            gainNode.gain.setValueAtTime(0.1, currentTime + note.dur - 0.02);
+            gainNode.gain.linearRampToValueAtTime(0, currentTime + note.dur);
+            
+            oscillator.start(currentTime);
+            oscillator.stop(currentTime + note.dur);
+            
+            currentTime += note.dur;
+        });
+        
+        // Зацикливание
+        setTimeout(playLoop, loopDuration * 1000);
+    }
+    
+    playLoop();
+}
+
+function stopBGM() {
+    isBgmPlaying = false;
+    if (bgmGain) {
+        bgmGain.disconnect();
+        bgmGain = null;
+    }
+}
+
+// Универсальная функция воспроизведения звука (для обратной совместимости)
+function playSound(type) {
+    initAudio();
+    
+    switch(type) {
+        case 'jump':
+            playJumpSound();
+            break;
+        case 'coin':
+            playCoinSound();
+            break;
+        case 'die':
+            playDeathSound();
+            break;
+        case 'win':
+            playWinSound();
+            break;
+        case 'land':
+            playLandSound();
+            break;
+    }
+}
+
+// Старая функция для совместимости
 function playTone(type) {
-    // Теперь используем файлы вместо синтезированных звуков
     playSound(type);
 }
 
@@ -267,6 +525,9 @@ function startGame(config) {
     currentLevelConfig = config;
     scoreElement.style.display = 'block';
     
+    // Инициализируем аудио контекст при старте игры
+    initAudio();
+    
     // Инициализируем элементы фона при старте игры
     initBackgroundElements();
 
@@ -274,6 +535,12 @@ function startGame(config) {
     landedPlatforms.clear(); // Очищаем набор приземлившихся платформ
     gameRunning = true;
     lastTime = performance.now();
+    
+    // Запускаем фоновую музыку если включена
+    if (bgmEnabled) {
+        startBGM();
+    }
+    
     gameLoop(lastTime);
 }
 
@@ -289,6 +556,10 @@ function toMainMenu() {
     mainMenu.classList.remove('hidden');
     scoreElement.style.display = 'none';
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    
+    // Останавливаем фоновую музыку при выходе в меню
+    stopBGM();
+    
     drawBackground();
 }
 
@@ -747,6 +1018,9 @@ function gameLoop(timestamp) {
             player.y = p.y - player.height;
             player.vy = 0;
             onGround = true;
+
+            // Воспроизводим звук приземления (тихий)
+            playSound('land');
 
             // Логика для уровня "Прыжки" (Тип 3)
             // Считаем только новые платформы
