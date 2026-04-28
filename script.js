@@ -551,7 +551,8 @@ function finishLevel(success) {
 
 function resetGameVariables() {
     player.x = canvas.width / 2 - 15;
-    player.y = 400;
+    // Герой появляется в самом верху, на стартовой платформе
+    player.y = 480; // Чуть выше стартовой платформы (y=500)
     player.vy = 0;
     score = 0;
     gameTime = 0;
@@ -1137,7 +1138,7 @@ function drawGameObjects() {
 }
 
 function jump() {
-    if (gameRunning) {
+    if (gameRunning && onGround) {
         player.vy = JUMP_FORCE;
         playTone('jump');
     }
