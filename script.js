@@ -118,44 +118,66 @@ let maxUnlockedLevel = parseInt(localStorage.getItem('jumpSkok_maxLevel')) || 1;
 let selectedLevelId = null;
 let currentLevelConfig = null;
 
-// Аудио
+// Аудио - загрузка звуковых файлов
+const sounds = {
+    jump: new Audio('assets/sounds/jump.wav'),
+    coin: new Audio('assets/sounds/coin.wav'),
+    die: new Audio('assets/sounds/die.wav'),
+    win: new Audio('assets/sounds/win.wav')
+};
+
+// Настройка громкости и зацикливания
+Object.values(sounds).forEach(sound => {
+    sound.volume = 0.4;
+    sound.preload = 'auto';
+});
+
+// Состояние звука (включен/выключен)
+let soundEnabled = localStorage.getItem('jumpSkok_soundEnabled') !== 'false';
+
+// Функция воспроизведения звука
+function playSound(type) {
+    if (!soundEnabled) return;
+    
+    const sound = sounds[type];
+    if (sound) {
+        // Сбрасываем на начало для быстрого повторного воспроизведения
+        sound.currentTime = 0;
+        sound.play().catch(e => console.log('Звук не воспроизведен:', e));
+    }
+}
+
+// Функция переключения звука
+function toggleSound() {
+    soundEnabled = !soundEnabled;
+    localStorage.setItem('jumpSkok_soundEnabled', soundEnabled);
+    updateSoundIcon();
+}
+
+// Обновление иконки звука
+function updateSoundIcon() {
+    const soundIcon = document.getElementById('soundIcon');
+    const soundBtn = document.getElementById('soundToggleBtn');
+    
+    if (soundEnabled) {
+        soundIcon.textContent = '🔊';
+        soundBtn.classList.remove('muted');
+        soundBtn.title = 'Выключить звук';
+    } else {
+        soundIcon.textContent = '🔇';
+        soundBtn.classList.add('muted');
+        soundBtn.title = 'Включить звук';
+    }
+}
+
+// Инициализация состояния звука при загрузке
+updateSoundIcon();
+
+// Старая функция playTone остается для совместимости, но теперь используем playSound
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 function playTone(type) {
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const osc = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    osc.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    const now = audioCtx.currentTime;
-
-    if (type === 'jump') {
-        osc.frequency.setValueAtTime(300, now);
-        osc.frequency.exponentialRampToValueAtTime(600, now + 0.1);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
-    } else if (type === 'coin') {
-        osc.type = 'square';
-        osc.frequency.setValueAtTime(1200, now);
-        osc.frequency.setValueAtTime(1800, now + 0.05);
-        gainNode.gain.setValueAtTime(0.1, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.1);
-        osc.start(now); osc.stop(now + 0.1);
-    } else if (type === 'die') {
-        osc.type = 'sawtooth';
-        osc.frequency.setValueAtTime(200, now);
-        osc.frequency.exponentialRampToValueAtTime(50, now + 0.3);
-        gainNode.gain.setValueAtTime(0.3, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.3);
-        osc.start(now); osc.stop(now + 0.3);
-    } else if (type === 'win') {
-        osc.type = 'triangle';
-        osc.frequency.setValueAtTime(400, now);
-        osc.frequency.linearRampToValueAtTime(800, now + 0.2);
-        gainNode.gain.setValueAtTime(0.2, now);
-        gainNode.gain.linearRampToValueAtTime(0, now + 0.4);
-        osc.start(now); osc.stop(now + 0.4);
-    }
+    // Теперь используем файлы вместо синтезированных звуков
+    playSound(type);
 }
 
 // Игровая логика
