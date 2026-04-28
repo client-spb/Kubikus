@@ -296,6 +296,23 @@ function createPlatform(yPos) {
     }
 }
 
+// Функция для рисования закругленного прямоугольника
+function drawRoundedRect(ctx, x, y, width, height, radius, fillColor) {
+    ctx.fillStyle = fillColor;
+    ctx.beginPath();
+    ctx.moveTo(x + radius, y);
+    ctx.lineTo(x + width - radius, y);
+    ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
+    ctx.lineTo(x + width, y + height - radius);
+    ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
+    ctx.lineTo(x + radius, y + height);
+    ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
+    ctx.lineTo(x, y + radius);
+    ctx.quadraticCurveTo(x, y, x + radius, y);
+    ctx.closePath();
+    ctx.fill();
+}
+
 // Доработка логики прыжков для уровня 3
 let lastJumpState = false;
 
@@ -409,30 +426,57 @@ function gameLoop(timestamp) {
 
 
 function drawClouds() {
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
     ctx.beginPath(); ctx.arc(50, 100, 30, 0, Math.PI*2); ctx.arc(90, 100, 40, 0, Math.PI*2); ctx.fill();
     ctx.beginPath(); ctx.arc(250, 250, 25, 0, Math.PI*2); ctx.arc(290, 250, 35, 0, Math.PI*2); ctx.fill();
 }
 
 function drawGameObjects() {
-    ctx.fillStyle = '#66BB6A';
+    // Яркие веселые цвета для платформ
+    const platformColors = ['#00E676', '#FFEB3B', '#FF4081', '#40C4FF', '#7C4DFF'];
+    
     for (let p of platforms) {
-        const radius = Math.min(8, p.height / 2);
-        ctx.beginPath();
-        ctx.roundRect(p.x, p.y, p.width, p.height, radius);
-        ctx.fill();
+        const radius = 8;
+        const color = platformColors[Math.floor(Math.random() * platformColors.length)];
+        drawRoundedRect(ctx, p.x, p.y, p.width, p.height, radius, color);
     }
+    
+    // Яркие монетки
     ctx.fillStyle = '#FFD700';
     for (let c of coins) {
-        if(!c.collected) { ctx.beginPath(); ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); ctx.fill(); }
+        if(!c.collected) { 
+            ctx.beginPath(); 
+            ctx.arc(c.x+10, c.y+10, 8, 0, Math.PI*2); 
+            ctx.fill();
+            // Блеск на монетке
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+            ctx.beginPath();
+            ctx.arc(c.x+7, c.y+7, 3, 0, Math.PI*2);
+            ctx.fill();
+            ctx.fillStyle = '#FFD700';
+        }
     }
-    // Герой
+    
+    // Герой - яркий и веселый
     ctx.fillStyle = '#FF5722';
     ctx.fillRect(player.x, player.y, player.width, player.height);
     ctx.fillStyle = 'white';
-    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); 
+    ctx.arc(player.x+10, player.y+12, 5, 0, Math.PI*2); 
+    ctx.arc(player.x+20, player.y+12, 5, 0, Math.PI*2); 
+    ctx.fill();
     ctx.fillStyle = 'black';
-    ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); ctx.fill();
+    ctx.beginPath(); 
+    ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); 
+    ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); 
+    ctx.fill();
+    
+    // Улыбка героя
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(player.x+15, player.y+20, 8, 0.2, Math.PI - 0.2);
+    ctx.stroke();
 }
 
 function jump() {
