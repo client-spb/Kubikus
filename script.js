@@ -378,7 +378,7 @@ function playTone(type) {
 // Игровая логика
 const GRAVITY = 0.6;
 const JUMP_FORCE = -13;
-let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, jumping: false };
+let player = { x: 180, y: 400, width: 30, height: 40, vy: 0, jumping: false, onGround: false };
 let platforms = [];
 let coins = [];
 let animatedCoins = []; // Монеты для анимации полета к счетчику
@@ -951,7 +951,7 @@ function gameLoop(timestamp) {
     // Для параллакс-эффекта фон движется медленнее
     bgParallaxSpeed = moveSpeed * 0.3;
 
-    let onGround = false;
+    player.onGround = false;
 
     for (let p of platforms) {
         p.y += moveSpeed;
@@ -975,7 +975,7 @@ function gameLoop(timestamp) {
 
             player.y = p.y - player.height;
             player.vy = 0;
-            onGround = true;
+            player.onGround = true;
 
             // Воспроизводим звук приземления (тихий)
             playSound('land');
@@ -1138,7 +1138,7 @@ function drawGameObjects() {
 }
 
 function jump() {
-    if (gameRunning && onGround) {
+    if (gameRunning && player.onGround) {
         player.vy = JUMP_FORCE;
         playTone('jump');
     }
