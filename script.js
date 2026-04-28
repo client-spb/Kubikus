@@ -430,6 +430,7 @@ let landedPlatforms = new Set(); // Для отслеживания уникал
 
 // Анимационные параметры для фона
 let bgOffset = 0;
+let bgParallaxSpeed = 0; // Глобальная переменная для параллакс-эффекта
 let cloudPositions = [];
 let planetPositions = [];
 let dandelionPositions = [];
@@ -714,7 +715,7 @@ function gameLoop(timestamp) {
     const moveSpeed = 1.5 * speedMultiplier; // Скорость движения платформ вниз
     
     // Для параллакс-эффекта фон движется медленнее
-    const bgParallaxSpeed = moveSpeed * 0.3;
+    bgParallaxSpeed = moveSpeed * 0.3;
 
     let onGround = false;
 
