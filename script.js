@@ -135,68 +135,58 @@ function initAudio() {
     }
 }
 
-// Состояние звука (включен/выключен)
-let soundEnabled = localStorage.getItem('jumpSkok_soundEnabled') !== 'false';
-let bgmEnabled = localStorage.getItem('jumpSkok_bgmEnabled') === 'true';
+// Состояние звука (включен/выключен) - единое для всех звуков
+let allSoundEnabled = localStorage.getItem('jumpSkok_allSoundEnabled') !== 'false';
 
-// Функция переключения звука эффектов
-function toggleSound() {
-    soundEnabled = !soundEnabled;
-    localStorage.setItem('jumpSkok_soundEnabled', soundEnabled);
-    updateSoundIcon();
-}
-
-// Функция переключения фоновой музыки
-function toggleBGM() {
-    bgmEnabled = !bgmEnabled;
-    localStorage.setItem('jumpSkok_bgmEnabled', bgmEnabled);
-    updateBgmIcon();
-    if (bgmEnabled && gameRunning) {
+// Функция переключения всех звуков (эффекты + музыка)
+function toggleAllSound() {
+    allSoundEnabled = !allSoundEnabled;
+    localStorage.setItem('jumpSkok_allSoundEnabled', allSoundEnabled);
+    updateAllSoundIcon();
+    
+    // Управление фоновой музыкой
+    if (allSoundEnabled && gameRunning) {
         startBGM();
     } else {
         stopBGM();
     }
 }
 
-// Обновление иконки звука эффектов
-function updateSoundIcon() {
+// Обновление иконки звука
+function updateAllSoundIcon() {
     const soundIcon = document.getElementById('soundIcon');
     const soundBtn = document.getElementById('soundToggleBtn');
     
-    if (soundEnabled) {
+    if (allSoundEnabled) {
         soundIcon.textContent = '🔊';
         soundBtn.classList.remove('muted');
-        soundBtn.title = 'Выключить звук эффектов';
+        soundBtn.title = 'Выключить все звуки';
     } else {
         soundIcon.textContent = '🔇';
         soundBtn.classList.add('muted');
-        soundBtn.title = 'Включить звук эффектов';
+        soundBtn.title = 'Включить все звуки';
     }
 }
 
-// Обновление иконки фоновой музыки
-function updateBgmIcon() {
-    const bgmIcon = document.getElementById('bgmIcon');
-    const bgmBtn = document.getElementById('bgmToggleBtn');
-    
-    if (bgmIcon && bgmBtn) {
-        if (bgmEnabled) {
-            bgmIcon.textContent = '🎵';
-            bgmBtn.classList.remove('muted');
-            bgmBtn.title = 'Выключить фоновую музыку';
-        } else {
-            bgmIcon.textContent = '🔇';
-            bgmBtn.classList.add('muted');
-            bgmBtn.title = 'Включить фоновую музыку';
-        }
-    }
+// Обратная совместимость - старые функции теперь используют единый флаг
+function toggleSound() {
+    toggleAllSound();
+}
+
+function toggleBGM() {
+    toggleAllSound();
+}
+
+// Проверка включения звука для эффектов
+function isSoundEnabled() {
+    return allSoundEnabled;
 }
 
 // ==================== СИНТЕЗИРОВАННЫЕ ЗВУКИ ====================
 
 // Звук прыжка - короткий восходящий тон
 function playJumpSound() {
-    if (!soundEnabled || !audioCtx) return;
+    if (!allSoundEnabled || !audioCtx) return;
     
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
@@ -216,7 +206,7 @@ function playJumpSound() {
 
 // Звук сбора монеты - приятный звонкий звук
 function playCoinSound() {
-    if (!soundEnabled || !audioCtx) return;
+    if (!allSoundEnabled || !audioCtx) return;
     
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
@@ -249,7 +239,7 @@ function playCoinSound() {
 
 // Звук проигрыша - нисходящий неприятный аккорд
 function playDeathSound() {
-    if (!soundEnabled || !audioCtx) return;
+    if (!allSoundEnabled || !audioCtx) return;
     
     // Базовый тон
     const oscillator = audioCtx.createOscillator();
@@ -284,7 +274,7 @@ function playDeathSound() {
 
 // Звук победы - мажорный аккорд
 function playWinSound() {
-    if (!soundEnabled || !audioCtx) return;
+    if (!allSoundEnabled || !audioCtx) return;
     
     const notes = [523.25, 659.25, 783.99, 1046.50]; // C major arpeggio
     
@@ -310,7 +300,7 @@ function playWinSound() {
 
 // Звук приземления на платформу (тихий)
 function playLandSound() {
-    if (!soundEnabled || !audioCtx) return;
+    if (!allSoundEnabled || !audioCtx) return;
     
     const oscillator = audioCtx.createOscillator();
     const gainNode = audioCtx.createGain();
@@ -332,7 +322,7 @@ function playLandSound() {
 // Используем аудиофайл background.mp3 из папки assets/audio/
 
 function startBGM() {
-    if (!bgmEnabled || isBgmPlaying) return;
+    if (!allSoundEnabled || isBgmPlaying) return;
     
     // Создаем HTML5 Audio элемент для фоновой музыки
     bgmAudio = new Audio('assets/audio/background.mp3');
@@ -485,7 +475,7 @@ function startGame(config) {
     lastTime = performance.now();
     
     // Запускаем фоновую музыку если включена
-    if (bgmEnabled) {
+    if (allSoundEnabled) {
         startBGM();
     }
     
