@@ -58,7 +58,9 @@ const LEVELS_CONFIG = [
         diff: "Новичок",
         platforms: [
             { type: 'grass', chance: 10 }
-        ]
+        ],
+        minGap: 80,  // Минимальный интервал между платформами (по умолчанию 80)
+        maxGap: 120  // Максимальный интервал между платформами (по умолчанию 120)
     },
     {
         id: 2,
@@ -73,7 +75,9 @@ const LEVELS_CONFIG = [
             { type: 'snow', chance: 4 },
             { type: 'ice', chance: 3 },
             { type: 'grass', chance: 2 }
-        ]
+        ],
+        minGap: 70,
+        maxGap: 110
     },
     {
         id: 3,
@@ -88,7 +92,9 @@ const LEVELS_CONFIG = [
             { type: 'stone', chance: 5 },
             { type: 'spikes', chance: 2 },
             { type: 'ice', chance: 3 }
-        ]
+        ],
+        minGap: 60,
+        maxGap: 100
     }
     // Можно добавить еще уровни здесь...
 ];
@@ -1050,6 +1056,11 @@ function getRandomPlatformType() {
 function generatePlatforms() {
     platforms = [];
     coins = [];
+    
+    // Получаем настройки интервалов для текущего уровня с дефолтными значениями
+    const minGap = currentLevelConfig?.minGap ?? 80;  // По умолчанию 80
+    const maxGap = currentLevelConfig?.maxGap ?? 120; // По умолчанию 120
+    
     // Стартовая платформа всегда безопасная (трава)
     // Позиционируем платформу чуть ниже игрока, чтобы он мог на неё приземлиться
     // Игрок появляется на y = -200, поэтому платформа должна быть примерно на y = -100
@@ -1065,7 +1076,9 @@ function generatePlatforms() {
     const platformCount = 15;
     let lastY = startY;
     for (let i = 1; i <= platformCount; i++) {
-        const yPos = lastY - 90; // Фиксированный шаг вниз
+        // Случайный интервал между платформами в заданном диапазоне
+        const gap = Math.floor(Math.random() * (maxGap - minGap + 1)) + minGap;
+        const yPos = lastY - gap;
         createPlatform(yPos, lastY);
         lastY = platforms[platforms.length - 1].y; // Обновляем lastY с учетом корректировки
     }
