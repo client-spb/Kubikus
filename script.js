@@ -418,12 +418,14 @@ let animatedCoins = [];  // Монеты для анимации полета к
 let animatedFruits = []; // Фрукты для анимации конвертации в монеты
 
 // === РАЗДЕЛЕНИЕ ВАЛЮТЫ ===
-// coinsCount - валюта для магазина (монеты)
+// coinsCount - валюта для магазина (монеты) - основная касса
 // scorePoints - очки для таблицы лидеров (рейтинг)
 // fruitScore - дополнительные очки за фрукты (идут в рейтинг)
-let coinsCount = 0;      
-let scorePoints = 0;     
-let fruitScore = 0;      
+// levelCoins - монеты, собранные в текущем уровне (для проверки условия победы)
+let coinsCount = 0;      // Основная касса (сохраняется между уровнями)
+let scorePoints = 0;     // Очки рейтинга
+let fruitScore = 0;      // Очки за фрукты
+let levelCoins = 0;      // Монеты текущего уровня (сбрасываются при старте уровня)
 
 let gameTime = 0;        // Для уровня на время
 let gameRunning = false;
@@ -862,7 +864,7 @@ function checkWinCondition() {
     if (!currentLevelConfig) return false;
 
     let won = false;
-    if (currentLevelConfig.type === 'coins' && coinsCount >= currentLevelConfig.target) won = true;
+    if (currentLevelConfig.type === 'coins' && levelCoins >= currentLevelConfig.target) won = true;  // Проверяем монеты уровня, а не общую кассу
     if (currentLevelConfig.type === 'jumps' && scorePoints >= currentLevelConfig.target) won = true;
     if (currentLevelConfig.type === 'time' && gameTime >= currentLevelConfig.target) won = true;
 
@@ -891,10 +893,9 @@ function finishLevel(success) {
         }
         
         // Сохраняем очки и монеты в localStorage
-        const savedCoins = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
-        const savedScore = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
-        localStorage.setItem('jumpSkok_coins', savedCoins + coinsCount);
-        localStorage.setItem('jumpSkok_score', savedScore + scorePoints + fruitScore);
+        // coinsCount уже содержит накопленные монеты + монеты, собранные в этом уровне
+        localStorage.setItem('jumpSkok_coins', coinsCount);
+        localStorage.setItem('jumpSkok_score', scorePoints + fruitScore);
         
         // Сохраняем собранные фрукты для следующего уровня
         persistentCollectedFruits = [...collectedFruitsArray];
@@ -906,12 +907,17 @@ function finishLevel(success) {
         if (currentLevelConfig.type === 'time') {
              finalScoreValue.textContent = Math.floor(gameTime) + " сек";
         } else if (currentLevelConfig.type === 'coins') {
-             finalScoreValue.textContent = coinsCount + " / " + currentLevelConfig.target;
+             finalScoreValue.textContent = levelCoins + " / " + currentLevelConfig.target;  // Показываем монеты уровня
         } else if (currentLevelConfig.type === 'jumps') {
              finalScoreValue.textContent = scorePoints + " / " + currentLevelConfig.target;
         } else {
              finalScoreValue.textContent = (scorePoints + fruitScore) + " очков";
         }
+        
+        // При проигрыше НЕ сохраняем монеты и очки, полученные в этом уровне
+        // Восстанавливаем значения из localStorage
+        coinsCount = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
+        scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
         
         // При проигрыше очищаем все фрукты
         persistentCollectedFruits = [];
@@ -936,6 +942,7 @@ function resetGameVariables(clearFruits = true) {
     coinsCount = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
     scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
     fruitScore = 0;
+    levelCoins = 0;  // Сбрасываем монеты уровня при старте
     gameTime = 0;
     fruits = [];
     animatedFruits = [];
@@ -976,7 +983,7 @@ function updateHUD() {
     if (levelGoalText) {
         let goalText = "";
         if (currentLevelConfig.type === 'coins') {
-            goalText = `🪙 ${coinsCount} / ${currentLevelConfig.target}`;
+            goalText = `🪙 ${levelCoins} / ${currentLevelConfig.target}`;  // Показываем монеты уровня, а не общую кассу
         } else if (currentLevelConfig.type === 'jumps') {
             goalText = `🟩 ${scorePoints} / ${currentLevelConfig.target}`;
         } else if (currentLevelConfig.type === 'time') {
@@ -1424,12 +1431,13 @@ function gameLoop(timestamp) {
             });
             // Монета даёт +1 к цели уровня и +1 монету для магазина
             if (currentLevelConfig.type === 'coins') {
-                coinsCount++;
-                scorePoints++; // Также даём очко для лидеров
+                levelCoins++;      // Увеличиваем счётчик монет уровня (для проверки победы)
+                coinsCount++;      // Также добавляем в основную кассу
+                scorePoints++;     // Также даём очко для лидеров
                 updateHUD();
                 checkWinCondition();
             } else {
-                coinsCount++; // В других типах уровней тоже даём монеты
+                coinsCount++;      // В других типах уровней тоже даём монеты (только в кассу)
                 scorePoints++;
                 updateHUD();
             }
