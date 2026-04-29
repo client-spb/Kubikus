@@ -994,10 +994,7 @@ function updateHUD() {
     }
     
     // Обновляем отдельный дисплей монет для магазина
-    if (coinsCountElement && currencyDisplay) {
-        coinsCountElement.textContent = coinsCount;
-        currencyDisplay.style.display = 'block';
-    }
+ 
 }
 
 // Функция добавления собранного фрукта в массив для отображения
