@@ -1061,8 +1061,8 @@ function generatePlatforms() {
         height: 15,
         type: PLATFORM_TYPES.GRASS
     });
-    // Для первого уровня создаём меньше платформ
-    const platformCount = currentLevelConfig && currentLevelConfig.id === 1 ? 5 : 7;
+    // Генерируем сразу 15 платформ, чтобы заполнить экран и область выше
+    const platformCount = 15;
     let lastY = startY;
     for (let i = 1; i <= platformCount; i++) {
         const yPos = lastY - 90; // Фиксированный шаг вниз
