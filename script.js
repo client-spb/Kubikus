@@ -635,17 +635,17 @@ function updatePhysics() {
         
         // Респаун платформ, ушедших за экран
         if (p.y > canvas.height) {
-            // Находим самую нижнюю платформу на экране
-            let lowestY = 0;
+            // Находим самую верхнюю платформу на экране (с минимальным y)
+            let highestY = canvas.height;
             platforms.forEach(plat => {
-                if (plat.y < canvas.height && plat.y > lowestY) {
-                    lowestY = plat.y;
+                if (plat.y < canvas.height && plat.y < highestY) {
+                    highestY = plat.y;
                 }
             });
             
-            // Новая платформа появляется выше самой нижней с фиксированным шагом
+            // Новая платформа появляется выше самой верхней с фиксированным шагом
             const verticalGap = 90; // Фиксированный шаг как при генерации
-            p.y = lowestY - verticalGap;
+            p.y = highestY - verticalGap;
             p.x = Math.random() * (canvas.width - p.width);
             p.width = 80 + Math.random() * 30;
             // При респауне выбираем новый тип платформы
