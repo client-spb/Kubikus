@@ -4,7 +4,6 @@
 __pycache__/
 *.o
 *.obj
-*.class
 *.exe
 *.dll
 *.so
@@ -37,18 +36,6 @@ Thumbs.db
 coverage/
 htmlcov/
 .coverage
-
-# Build directories
-dist/
-build/
-target/
-.gradle/
-
-# Python specific
-.mypy_cache/
-.pytest_cache/
-*.pyc
-__pycache__/
 
 # Compressed files
 *.zip
