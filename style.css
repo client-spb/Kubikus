@@ -171,7 +171,9 @@ canvas {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(255, 255, 255, 0.98);
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.92), rgba(254, 202, 87, 0.92), rgba(168, 237, 234, 0.92));
+    background-size: 200% 200%;
+    animation: menuBgShift 8s ease infinite;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -182,6 +184,11 @@ canvas {
     opacity: 0;
 }
 
+@keyframes menuBgShift {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+}
+
 .screen:not(.hidden) {
     pointer-events: auto;
     opacity: 1;
@@ -190,16 +197,18 @@ canvas {
 .hidden { display: none !important; opacity: 0; }
 
 .menu-panel {
-    background: linear-gradient(145deg, #ffffff 0%, #fff9e6 100%);
-    padding: 30px 25px;
-    border-radius: 30px;
+    background: linear-gradient(145deg, rgba(255, 255, 255, 0.98) 0%, rgba(255, 249, 230, 0.98) 100%);
+    padding: 35px 30px;
+    border-radius: 35px;
     text-align: center;
-    box-shadow: 0 25px 50px rgba(102, 126, 234, 0.3), 0 0 0 1px rgba(255,255,255,0.8);
+    box-shadow: 0 30px 60px rgba(102, 126, 234, 0.4), 0 0 0 1px rgba(255,255,255,0.9), inset 0 0 40px rgba(255,255,255,0.5);
     width: 90%;
-    max-width: 350px;
+    max-width: 380px;
     animation: popIn 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
     position: relative;
     overflow: hidden;
+    backdrop-filter: blur(10px);
+    border: 3px solid rgba(255,255,255,0.6);
 }
 
 .menu-panel::before {
@@ -209,8 +218,19 @@ canvas {
     left: -50%;
     width: 200%;
     height: 200%;
-    background: radial-gradient(circle, rgba(102, 126, 234, 0.1) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(255, 107, 107, 0.15) 0%, transparent 70%);
     animation: shimmer 3s infinite;
+}
+
+.menu-panel::after {
+    content: '';
+    position: absolute;
+    bottom: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(254, 202, 87, 0.15) 0%, transparent 70%);
+    animation: shimmer 3s infinite reverse;
 }
 
 @keyframes shimmer {
@@ -252,12 +272,12 @@ canvas {
 .menu-btn {
     display: block;
     width: 100%;
-    padding: 14px 0;
-    margin: 10px 0;
+    padding: 16px 0;
+    margin: 12px 0;
     border: none;
-    border-radius: 16px;
-    font-size: 17px;
-    font-weight: 800;
+    border-radius: 20px;
+    font-size: 18px;
+    font-weight: 900;
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
     color: white;
@@ -266,70 +286,90 @@ canvas {
     z-index: 1;
     font-family: 'Nunito', sans-serif;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
+    background-size: 200% auto;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.3);
+    animation: buttonGradient 4s ease infinite;
+}
+
+@keyframes buttonGradient {
+    0%, 100% { background-position: 0% center; }
+    50% { background-position: 100% center; }
 }
 
 .menu-btn::before {
     content: '';
     position: absolute;
     top: 0;
-    left: 0;
+    left: -100%;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg, rgba(255,255,255,0.2), transparent);
-    opacity: 0;
-    transition: opacity 0.3s;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    transition: left 0.5s;
     z-index: -1;
 }
 
-.menu-btn:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+.menu-btn:hover::before {
+    left: 100%;
 }
 
-.menu-btn:hover::before {
-    opacity: 1;
+.menu-btn:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 15px 40px rgba(0,0,0,0.35), inset 0 2px 0 rgba(255,255,255,0.4);
 }
 
 .menu-btn:active {
-    transform: translateY(0) scale(0.98);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    transform: translateY(-2px) scale(0.98);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.25), inset 0 2px 0 rgba(255,255,255,0.3);
 }
 
 .btn-play {
-    background: linear-gradient(135deg, #00b894 0%, #00cec9 100%);
-    font-size: 20px;
-    box-shadow: 0 8px 25px rgba(0, 184, 148, 0.4);
+    background: linear-gradient(135deg, #00b894, #00cec9, #00b894);
+    font-size: 22px;
+    box-shadow: 0 10px 30px rgba(0, 184, 148, 0.5), inset 0 2px 0 rgba(255,255,255,0.3);
+    animation: buttonGradient 4s ease infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { box-shadow: 0 10px 30px rgba(0, 184, 148, 0.5), inset 0 2px 0 rgba(255,255,255,0.3); }
+    50% { box-shadow: 0 15px 40px rgba(0, 184, 148, 0.7), inset 0 2px 0 rgba(255,255,255,0.4); }
 }
 
 .btn-play:hover {
-    box-shadow: 0 12px 35px rgba(0, 184, 148, 0.5);
+    box-shadow: 0 18px 45px rgba(0, 184, 148, 0.6), inset 0 2px 0 rgba(255,255,255,0.4);
 }
 
 .btn-secondary {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-    box-shadow: 0 8px 25px rgba(108, 92, 231, 0.4);
+    background: linear-gradient(135deg, #6c5ce7, #a29bfe, #6c5ce7);
+    box-shadow: 0 10px 30px rgba(108, 92, 231, 0.5), inset 0 2px 0 rgba(255,255,255,0.3);
+    animation: buttonGradient 4s ease infinite;
 }
 
 .btn-secondary:hover {
-    box-shadow: 0 12px 35px rgba(108, 92, 231, 0.5);
+    box-shadow: 0 18px 45px rgba(108, 92, 231, 0.6), inset 0 2px 0 rgba(255,255,255,0.4);
 }
 
 .btn-back {
-    background: linear-gradient(135deg, #636e72 0%, #b2bec3 100%);
+    background: linear-gradient(135deg, #636e72, #b2bec3, #636e72);
     margin-top: 15px;
-    box-shadow: 0 6px 20px rgba(99, 110, 114, 0.3);
+    box-shadow: 0 8px 25px rgba(99, 110, 114, 0.4), inset 0 2px 0 rgba(255,255,255,0.3);
+    animation: buttonGradient 4s ease infinite;
+}
+
+.btn-back:hover {
+    box-shadow: 0 15px 35px rgba(99, 110, 114, 0.5), inset 0 2px 0 rgba(255,255,255,0.4);
 }
 
 .btn-start-lvl {
-    background: linear-gradient(135deg, #fdcb6e 0%, #ffeaa7 100%);
+    background: linear-gradient(135deg, #fdcb6e, #ffeaa7, #fdcb6e);
     color: #2d3436;
-    font-size: 19px;
-    box-shadow: 0 8px 25px rgba(253, 203, 110, 0.4);
+    font-size: 20px;
+    box-shadow: 0 10px 30px rgba(253, 203, 110, 0.5), inset 0 2px 0 rgba(255,255,255,0.3);
+    animation: buttonGradient 4s ease infinite;
 }
 
 .btn-start-lvl:hover {
-    box-shadow: 0 12px 35px rgba(253, 203, 110, 0.5);
+    box-shadow: 0 18px 45px rgba(253, 203, 110, 0.6), inset 0 2px 0 rgba(255,255,255,0.4);
 }
 
 /* Сетка уровней */
@@ -508,6 +548,231 @@ canvas {
     50% { transform: scale(1.1); opacity: 0.8; }
 }
 
+/* Гирлянда */
+.garland-top,
+.garland-bottom {
+    position: absolute;
+    width: 100%;
+    height: 100px;
+    pointer-events: none;
+    z-index: 50;
+}
+
+.garland-top {
+    top: 0;
+}
+
+.garland-bottom {
+    bottom: 0;
+    transform: rotate(180deg);
+}
+
+.garland-wire {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #2d3436, #636e72, #2d3436);
+    border-radius: 2px;
+}
+
+.garland-light {
+    position: absolute;
+    width: 20px;
+    height: 30px;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    top: 3px;
+    animation: lightBlink 1.5s ease-in-out infinite;
+    box-shadow: 0 0 10px currentColor;
+}
+
+.garland-light::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 8px;
+    height: 8px;
+    background: #2d3436;
+    border-radius: 50%;
+}
+
+.garland-light.light-1 {
+    left: 10%;
+    background: #ff6b6b;
+    color: #ff6b6b;
+    animation-delay: 0s;
+}
+
+.garland-light.light-2 {
+    left: 20%;
+    background: #feca57;
+    color: #feca57;
+    animation-delay: 0.2s;
+}
+
+.garland-light.light-3 {
+    left: 30%;
+    background: #00cec9;
+    color: #00cec9;
+    animation-delay: 0.4s;
+}
+
+.garland-light.light-4 {
+    left: 40%;
+    background: #00b894;
+    color: #00b894;
+    animation-delay: 0.6s;
+}
+
+.garland-light.light-5 {
+    left: 50%;
+    background: #fd79a8;
+    color: #fd79a8;
+    animation-delay: 0.8s;
+}
+
+.garland-light.light-6 {
+    left: 60%;
+    background: #a29bfe;
+    color: #a29bfe;
+    animation-delay: 1s;
+}
+
+.garland-light.light-7 {
+    left: 70%;
+    background: #fdcb6e;
+    color: #fdcb6e;
+    animation-delay: 1.2s;
+}
+
+.garland-light.light-8 {
+    left: 80%;
+    background: #e17055;
+    color: #e17055;
+    animation-delay: 1.4s;
+}
+
+@keyframes lightBlink {
+    0%, 100% { 
+        opacity: 0.4; 
+        transform: scale(0.9);
+        filter: brightness(0.8);
+    }
+    50% { 
+        opacity: 1; 
+        transform: scale(1.1);
+        filter: brightness(1.3);
+    }
+}
+
+/* Плавающие декорации */
+.menu-decorations {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 40;
+}
+
+.floating-star,
+.floating-heart {
+    position: absolute;
+    font-size: 24px;
+    animation: floatAround 6s ease-in-out infinite;
+    filter: drop-shadow(0 4px 8px rgba(0,0,0,0.3));
+}
+
+.floating-star.star-1 {
+    top: 15%;
+    left: 10%;
+    animation-delay: 0s;
+}
+
+.floating-star.star-2 {
+    top: 25%;
+    right: 15%;
+    animation-delay: -2s;
+}
+
+.floating-star.star-3 {
+    bottom: 30%;
+    left: 15%;
+    animation-delay: -4s;
+}
+
+.floating-heart.heart-1 {
+    top: 20%;
+    right: 10%;
+    animation-delay: -1s;
+}
+
+.floating-heart.heart-2 {
+    bottom: 25%;
+    right: 20%;
+    animation-delay: -3s;
+}
+
+.floating-circle {
+    position: absolute;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(255, 107, 107, 0.3), rgba(254, 202, 87, 0.3));
+    animation: circleFloat 8s ease-in-out infinite;
+}
+
+.floating-circle.circle-1 {
+    width: 60px;
+    height: 60px;
+    top: 10%;
+    left: 50%;
+    animation-delay: 0s;
+}
+
+.floating-circle.circle-2 {
+    width: 40px;
+    height: 40px;
+    bottom: 15%;
+    left: 20%;
+    animation-delay: -4s;
+}
+
+@keyframes floatAround {
+    0%, 100% { 
+        transform: translateY(0) rotate(0deg) scale(1); 
+        opacity: 0.8;
+    }
+    25% { 
+        transform: translateY(-20px) rotate(90deg) scale(1.1); 
+        opacity: 1;
+    }
+    50% { 
+        transform: translateY(-10px) rotate(180deg) scale(0.9); 
+        opacity: 0.9;
+    }
+    75% { 
+        transform: translateY(-30px) rotate(270deg) scale(1.05); 
+        opacity: 1;
+    }
+}
+
+@keyframes circleFloat {
+    0%, 100% { 
+        transform: translate(0, 0) scale(1) rotate(0deg); 
+        opacity: 0.4;
+    }
+    33% { 
+        transform: translate(30px, -40px) scale(1.2) rotate(120deg); 
+        opacity: 0.6;
+    }
+    66% { 
+        transform: translate(-20px, 30px) scale(0.8) rotate(240deg); 
+        opacity: 0.5;
+    }
+}
+
 /* Заголовок карты миров */
 .world-map-title {
     color: #fff;
@@ -601,6 +866,29 @@ canvas {
     color: #fff;
     text-shadow: 0 2px 4px rgba(0,0,0,0.5);
     padding: 2px 0;
+}
+
+/* Адаптация под мобильные для гирлянды */
+@media (max-width: 768px) {
+    .garland-light {
+        width: 15px;
+        height: 22px;
+    }
+    
+    .floating-star,
+    .floating-heart {
+        font-size: 18px;
+    }
+    
+    .floating-circle.circle-1 {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .floating-circle.circle-2 {
+        width: 30px;
+        height: 30px;
+    }
 }
 
 /* АДАПТАЦИЯ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА */
