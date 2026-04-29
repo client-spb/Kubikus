@@ -632,7 +632,7 @@ function updatePhysics() {
                     // Считаем только новые платформы
                     if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
                         landedPlatforms.add(p.id);
-                        score++;
+                        scorePoints++;
                         updateHUD();
                         checkWinCondition();
                     }
@@ -643,7 +643,7 @@ function updatePhysics() {
                     // Логика для уровня "Прыжки" (Тип 3) - считаем пребывание на платформе
                     if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
                         landedPlatforms.add(p.id);
-                        score++;
+                        scorePoints++;
                         updateHUD();
                         checkWinCondition();
                     }
@@ -811,7 +811,7 @@ function startGame(config) {
 
     // При старте уровня передаём false, чтобы сохранить фрукты с предыдущего уровня (если была победа)
     resetGameVariables(false);
-    landedPlatforms.clear(); // Очищаем набор приземлившихся платформ
+    landedPlatforms = new Set(); // Очищаем набор приземлившихся платформ
     gameRunning = true;
     lastTime = performance.now();
     
@@ -915,10 +915,10 @@ function finishLevel(success) {
 
 function resetGameVariables(clearFruits = true) {
     player.x = canvas.width / 2 - 15;
-    // Герой появляется в верхней части экрана, но над стартовой платформой
-    player.y = canvas.height - 200;
+    // Герой появляется в верхней части экрана - платформы будут спускаться к нему
+    player.y = 100;
     player.vy = 0;
-    prevPlayerY = canvas.height - 200;
+    prevPlayerY = 100;
     coinsCount = 0;
     scorePoints = 0;
     fruitScore = 0;
@@ -1051,8 +1051,8 @@ function generatePlatforms() {
     platforms = [];
     coins = [];
     // Стартовая платформа всегда безопасная (трава)
-    // Позиционируем платформу относительно высоты экрана - в нижней трети, чтобы игрок мог на неё приземлиться
-    const startY = canvas.height - 100;
+    // Позиционируем платформу чуть выше экрана, чтобы она спускалась к игроку
+    const startY = -50;
     platforms.push({ 
         x: 150, 
         y: startY, 
