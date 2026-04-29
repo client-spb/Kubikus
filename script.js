@@ -772,6 +772,9 @@ function startGame(config) {
     
     // Инициализируем элементы фона при старте игры
     initBackgroundElements();
+    
+    // Подгоняем размер canvas под контейнер
+    resizeCanvas();
 
     // При старте уровня передаём false, чтобы сохранить фрукты с предыдущего уровня (если была победа)
     resetGameVariables(false);
@@ -1738,5 +1741,28 @@ document.addEventListener('keydown', e => {
         jump();
     }
 });
+
+// ==================== АДАПТАЦИЯ ПОД МОБИЛЬНЫЕ УСТРОЙСТВА ====================
+// Функция изменения размера canvas под размер экрана
+function resizeCanvas() {
+    const container = document.getElementById('game-container');
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+    
+    // Пересчитываем позицию игрока при изменении размера
+    if (player) {
+        player.x = Math.min(player.x, canvas.width - player.width);
+        player.y = Math.min(player.y, canvas.height - player.height);
+    }
+}
+
+// Вызываем при загрузке страницы
+window.addEventListener('load', resizeCanvas);
+
+// Вызываем при изменении размера окна
+window.addEventListener('resize', resizeCanvas);
+
+// Вызываем при изменении ориентации устройства
+window.addEventListener('orientationchange', resizeCanvas);
 
 
