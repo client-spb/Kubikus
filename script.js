@@ -51,9 +51,9 @@ const LEVELS_CONFIG = [
         id: 1,
         title: "Зеленая Долина",
         type: "coins", // Сбор монет
-        target: 50,
-        speedMod: 1,
-        desc: "Собери 50 золотых монет, чтобы открыть портал.",
+        target: 20,
+        speedMod: 1.0,
+        desc: "Собери 20 золотых монет, чтобы открыть портал.",
         icon: "🪙",
         diff: "Новичок",
         platforms: [
