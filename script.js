@@ -496,34 +496,49 @@ function getRandomFruitType() {
 
 // ==================== КОНВЕРТАЦИЯ ФРУКТОВ В МОНЕТЫ ====================
 // Когда собрано определённое количество фруктов, они автоматически
-// конвертируются в монеты с красивой анимацией
+// конвертируются в монеты с красивой анимацией (по одному как автоматная очередь)
 function convertFruitsToCoins() {
-    if (isConvertingFruits) return;
+    if (isConvertingFruits || collectedFruitsCount === 0) return;
     
     isConvertingFruits = true;
     
-    // Звук начала конвертации
+    // Звук начала конвертации (высокий тон)
     if (audioCtx && allSoundEnabled) {
         const oscillator = audioCtx.createOscillator();
         const gainNode = audioCtx.createGain();
         oscillator.connect(gainNode);
         gainNode.connect(audioCtx.destination);
         oscillator.type = 'sine';
-        oscillator.frequency.setValueAtTime(400, audioCtx.currentTime);
-        oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.5);
-        gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
-        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+        oscillator.frequency.setValueAtTime(600, audioCtx.currentTime);
+        oscillator.frequency.exponentialRampToValueAtTime(1400, audioCtx.currentTime + 0.3);
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
         oscillator.start(audioCtx.currentTime);
-        oscillator.stop(audioCtx.currentTime + 0.5);
+        oscillator.stop(audioCtx.currentTime + 0.3);
     }
     
-    // Создаём анимированные фрукты для каждого собранного типа
-    // Для простоты берём среднее значение монет за фрукты
+    // Конвертируем только то количество, которое достигло порога (ровно 10)
+    const fruitsToConvert = Math.min(collectedFruitsCount, FRUIT_CONVERSION_THRESHOLD);
     const avgCoinValue = 5; // Среднее значение монет за фрукт
-    const totalCoins = collectedFruitsCount * avgCoinValue;
     
-    // Показываем визуальный эффект - несколько фруктов летят в центр
-    for (let i = 0; i < Math.min(collectedFruitsCount, 8); i++) {
+    // Запускаем анимацию по одному фрукту с быстрым интервалом (автоматная очередь)
+    let convertedCount = 0;
+    
+    function convertNextFruit() {
+        if (convertedCount >= fruitsToConvert) {
+            // Все фрукты сконвертированы - завершаем
+            setTimeout(() => {
+                collectedFruitsCount -= fruitsToConvert;
+                persistentCollectedFruits = [...collectedFruitsArray];
+                collectedFruitsArray = [];
+                isConvertingFruits = false;
+                updateHUD();
+                updateFruitsDisplay();
+            }, 300);
+            return;
+        }
+        
+        // Создаём один анимированный фрукт
         const fruitType = getRandomFruitType();
         animatedFruits.push({
             x: player.x + Math.random() * 40 - 20,
@@ -534,21 +549,33 @@ function convertFruitsToCoins() {
             points: fruitType.points,
             coinValue: fruitType.coinValue,
             progress: 0,
-            speed: 0.05,
+            speed: 0.08,
             rotation: 0
         });
+        
+        // Звук для каждого фрукта (короткий пик)
+        if (audioCtx && allSoundEnabled) {
+            const oscillator = audioCtx.createOscillator();
+            const gainNode = audioCtx.createGain();
+            oscillator.connect(gainNode);
+            gainNode.connect(audioCtx.destination);
+            oscillator.type = 'sine';
+            oscillator.frequency.setValueAtTime(800 + convertedCount * 50, audioCtx.currentTime);
+            oscillator.frequency.exponentialRampToValueAtTime(1200, audioCtx.currentTime + 0.08);
+            gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
+            oscillator.start(audioCtx.currentTime);
+            oscillator.stop(audioCtx.currentTime + 0.1);
+        }
+        
+        convertedCount++;
+        
+        // Следующий фрукт через 100мс (быстрая очередь)
+        setTimeout(convertNextFruit, 100);
     }
     
-    // Сбрасываем счётчик после небольшой задержки (когда анимация завершится)
-    setTimeout(() => {
-        collectedFruitsCount = 0;
-        // Сохраняем фрукты в постоянный массив перед очисткой временного
-        persistentCollectedFruits = [...collectedFruitsArray];
-        collectedFruitsArray = []; // Очищаем массив собранных фруктов
-        isConvertingFruits = false;
-        updateHUD();
-        updateFruitsDisplay(); // Обновляем отображение фруктов
-    }, 2000);
+    // Запускаем первый фрукт
+    convertNextFruit();
 }
 
 // ==================== ФИЗИКА И КОЛЛИЗИИ ====================
@@ -1573,13 +1600,13 @@ function gameLoop(timestamp) {
             updateHUD();
             animatedFruits.splice(i, 1);
         } else {
-            // Плавное движение к центру для конвертации
-            const centerX = canvas.width / 2;
-            const centerY = canvas.height / 2;
-            af.x = af.x + (centerX - af.x) * af.speed;
-            af.y = af.y + (centerY - af.y) * af.speed;
+            // Плавное движение ВВЕРХ к счетчику монет (верхний правый угол)
+            const targetX = canvas.width - 80; // Позиция счетчика монет справа
+            const targetY = 30; // Верхняя часть экрана
+            af.x = af.x + (targetX - af.x) * af.speed;
+            af.y = af.y + (targetY - af.y) * af.speed;
             // Вращение для эффекта
-            af.rotation += 0.2;
+            af.rotation += 0.3;
         }
     }
 
