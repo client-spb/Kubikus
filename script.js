@@ -537,6 +537,9 @@ function updatePhysics() {
     const prevY = player.y;
     const prevBottom = prevY + player.height;
     
+    // Флаг: был ли игрок на земле в предыдущем кадре
+    const wasOnGround = player.onGround;
+    
     // Движение по оси Y
     player.y += player.vy;
     
@@ -591,7 +594,10 @@ function updatePhysics() {
             // Проверяем, что падали вниз или имели нулевую скорость
             const fallingOrStill = player.vy >= 0;
             
-            if (fallingOrStill && wasAboveOrOn && isTouchingVirtual && notClippingDeep) {
+            // Дополнительная проверка: игрок действительно только что приземлился (переход из воздуха на землю)
+            const justLanded = fallingOrStill && wasAboveOrOn && isTouchingVirtual && notClippingDeep;
+            
+            if (justLanded) {
                 debugLogs.push(`COLLISION: vy=${player.vy.toFixed(2)}, prevBottom=${prevBottom.toFixed(1)}, platformTop=${platformTop.toFixed(1)}`);
 
                 // Проверка на шипы - мгновенная смерть
@@ -616,13 +622,25 @@ function updatePhysics() {
                     player.onGround = true;
                 }
                 
-                if (player.onGround) {
-                    // Воспроизводим звук приземления (тихий)
+                if (player.onGround && !wasOnGround) {
+                    // Воспроизводим звук приземления только если игрок только что приземлился
+                    // (не был на земле в предыдущем кадре)
                     playSound('land');
                     debugLogs.push(`LANDED on platform ${p.id}`);
 
                     // Логика для уровня "Прыжки" (Тип 3)
                     // Считаем только новые платформы
+                    if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
+                        landedPlatforms.add(p.id);
+                        score++;
+                        updateHUD();
+                        checkWinCondition();
+                    }
+                } else if (player.onGround && wasOnGround) {
+                    // Игрок уже стоит на платформе - просто продолжаем стоять
+                    debugLogs.push(`STANDING on platform ${p.id}`);
+                    
+                    // Логика для уровня "Прыжки" (Тип 3) - считаем пребывание на платформе
                     if (currentLevelConfig.type === 'jumps' && !landedPlatforms.has(p.id)) {
                         landedPlatforms.add(p.id);
                         score++;
@@ -897,10 +915,10 @@ function finishLevel(success) {
 
 function resetGameVariables(clearFruits = true) {
     player.x = canvas.width / 2 - 15;
-    // Герой появляется в самом верху экрана
-    player.y = 50;
+    // Герой появляется в верхней части экрана, но над стартовой платформой
+    player.y = canvas.height - 200;
     player.vy = 0;
-    prevPlayerY = 50;
+    prevPlayerY = canvas.height - 200;
     coinsCount = 0;
     scorePoints = 0;
     fruitScore = 0;
@@ -1033,8 +1051,8 @@ function generatePlatforms() {
     platforms = [];
     coins = [];
     // Стартовая платформа всегда безопасная (трава)
-    // Позиционируем платформу относительно высоты экрана - в верхней трети
-    const startY = Math.min(500, canvas.height * 0.6);
+    // Позиционируем платформу относительно высоты экрана - в нижней трети, чтобы игрок мог на неё приземлиться
+    const startY = canvas.height - 100;
     platforms.push({ 
         x: 150, 
         y: startY, 
