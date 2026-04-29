@@ -173,7 +173,11 @@ function updateCurrencyDisplay() {
 
 let audioCtx = null;
 let bgmAudio = null;
+let winAudio = null;
 let isBgmPlaying = false;
+let fireworksActive = false;
+let fireworksDuration = 5000; // Длительность салюта в мс (можно настроить)
+let fireworksStartTime = 0;
 
 // Инициализация аудио контекста
 function initAudio() {
@@ -396,6 +400,36 @@ function stopBGM() {
         bgmAudio.pause();
         bgmAudio.currentTime = 0;
         bgmAudio = null;
+    }
+}
+
+// ==================== МУЗЫКА ПОБЕДЫ ====================
+// Воспроизведение файла win.mp3 при победе в уровне
+
+function startWinMusic() {
+    if (!allSoundEnabled) return;
+    
+    // Останавливаем предыдущую музыку победы если есть
+    if (winAudio) {
+        winAudio.pause();
+        winAudio.currentTime = 0;
+    }
+    
+    // Создаем HTML5 Audio элемент для музыки победы
+    winAudio = new Audio('assets/audio/win.mp3');
+    winAudio.volume = 0.5; // Громкость 50%
+    
+    // Запускаем музыку
+    winAudio.play().catch(error => {
+        console.log('Не удалось воспроизвести музыку победы:', error);
+    });
+}
+
+function stopWinMusic() {
+    if (winAudio) {
+        winAudio.pause();
+        winAudio.currentTime = 0;
+        winAudio = null;
     }
 }
 
@@ -795,6 +829,11 @@ function showLevelSelect() {
     levelPreviewScreen.classList.add('hidden');
     levelSelectScreen.classList.remove('hidden');
     
+    // Очищаем салют и останавливаем музыку победы при выходе на карту уровней
+    fireworksActive = false;
+    fireworksParticles = [];
+    stopWinMusic();
+    
     // При выходе на карту уровней очищаем фрукты (только если не победа)
     // Фрукты уже сохранены в persistentCollectedFruits при победе или очищены при проигрыше
     renderLevels();
@@ -896,6 +935,9 @@ function startGame(config) {
 
 function restartLevel() {
     gameOverScreen.classList.add('hidden');
+    fireworksActive = false;
+    fireworksParticles = [];
+    stopWinMusic();
     startGame(currentLevelConfig);
 }
 
@@ -914,8 +956,11 @@ function toMainMenu() {
     
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Останавливаем фоновую музыку при выходе в меню
+    // Останавливаем фоновую музыку и музыку победы при выходе в меню
     stopBGM();
+    stopWinMusic();
+    fireworksActive = false;
+    fireworksParticles = [];
     
     drawBackground();
 }
@@ -941,7 +986,10 @@ function finishLevel(success) {
     stopBGM();
 
     if (success) {
-        playTone('win');
+        startWinMusic(); // Воспроизводим музыку победы из файла win.mp3
+        fireworksActive = true; // Запускаем салют
+        fireworksStartTime = Date.now();
+        
         endStatus.textContent = "УРОВЕНЬ ПРОЙДЕН!";
         endStatus.className = "status-msg status-success";
         finalScoreValue.textContent = currentLevelConfig.icon; // Показываем иконку вместо очков
@@ -1850,6 +1898,79 @@ function drawGameObjects() {
         ctx.fillText('🍎→🪙 КОНВЕРТАЦИЯ!', canvas.width / 2, canvas.height / 2 - 50);
         ctx.restore();
     }
+    
+    // Отрисовка салюта при победе
+    if (fireworksActive && gameOverScreen.classList.contains('hidden') === false) {
+        drawFireworks();
+    }
+}
+
+// ==================== САЛЮТ ПРИ ПОБЕДЕ ====================
+// Простая система частиц для эффекта фейерверка
+
+let fireworksParticles = [];
+
+function createFirework(x, y) {
+    const particleCount = 30;
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFFF00', '#FF00FF', '#00FFFF', '#FFA500', '#FF69B4'];
+    
+    for (let i = 0; i < particleCount; i++) {
+        const angle = (Math.PI * 2 / particleCount) * i + Math.random() * 0.5;
+        const speed = 2 + Math.random() * 4;
+        fireworksParticles.push({
+            x: x,
+            y: y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 1.0,
+            decay: 0.015 + Math.random() * 0.01,
+            color: colors[Math.floor(Math.random() * colors.length)],
+            size: 2 + Math.random() * 3
+        });
+    }
+}
+
+function updateAndDrawFireworks() {
+    // Создаем новые залпы случайно
+    if (Math.random() < 0.08) {
+        const x = canvas.width * 0.2 + Math.random() * canvas.width * 0.6;
+        const y = canvas.height * 0.2 + Math.random() * canvas.height * 0.3;
+        createFirework(x, y);
+    }
+    
+    // Обновляем и рисуем частицы
+    for (let i = fireworksParticles.length - 1; i >= 0; i--) {
+        let p = fireworksParticles[i];
+        
+        p.x += p.vx;
+        p.y += p.vy;
+        p.vy += 0.08; // Гравитация
+        p.life -= p.decay;
+        
+        if (p.life <= 0) {
+            fireworksParticles.splice(i, 1);
+            continue;
+        }
+        
+        ctx.globalAlpha = p.life;
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    
+    ctx.globalAlpha = 1.0;
+}
+
+function drawFireworks() {
+    // Проверяем, не истекло ли время салюта
+    if (Date.now() - fireworksStartTime > fireworksDuration) {
+        fireworksActive = false;
+        fireworksParticles = [];
+        return;
+    }
+    
+    updateAndDrawFireworks();
 }
 
 // ==================== УПРАВЛЕНИЕ ИГРОКОМ ====================
