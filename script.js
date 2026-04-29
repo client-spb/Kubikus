@@ -890,6 +890,12 @@ function finishLevel(success) {
             localStorage.setItem('jumpSkok_maxLevel', maxUnlockedLevel);
         }
         
+        // Сохраняем очки и монеты в localStorage
+        const savedCoins = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
+        const savedScore = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
+        localStorage.setItem('jumpSkok_coins', savedCoins + coinsCount);
+        localStorage.setItem('jumpSkok_score', savedScore + scorePoints + fruitScore);
+        
         // Сохраняем собранные фрукты для следующего уровня
         persistentCollectedFruits = [...collectedFruitsArray];
     } else {
@@ -925,8 +931,10 @@ function resetGameVariables(clearFruits = true) {
     player.y = -200;
     player.vy = 0;
     prevPlayerY = -200;
-    coinsCount = 0;
-    scorePoints = 0;
+    
+    // Загружаем сохранённые очки и монеты из localStorage
+    coinsCount = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
+    scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
     fruitScore = 0;
     gameTime = 0;
     fruits = [];
