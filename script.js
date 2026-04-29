@@ -136,6 +136,29 @@ let maxUnlockedLevel = parseInt(localStorage.getItem('jumpSkok_maxLevel')) || 1;
 let selectedLevelId = null;
 let currentLevelConfig = null;
 
+// ==================== ОТЛАДОЧНЫЕ ФУНКЦИИ ====================
+// Функции для сброса localStorage (монеты и уровни)
+
+function clearCoinsStorage() {
+    localStorage.removeItem('jumpSkok_coins');
+    coinsCount = 0;
+    updateCurrencyDisplay();
+    alert('💰 Монеты сброшены!\nТеперь у вас 0 монет.');
+}
+
+function clearLevelsStorage() {
+    localStorage.removeItem('jumpSkok_maxLevel');
+    maxUnlockedLevel = 1;
+    alert('🗺 Уровни сброшены!\nТеперь открыт только уровень 1.');
+}
+
+// Функция обновления отображения валюты (для правого верхнего угла)
+function updateCurrencyDisplay() {
+    if (coinsCountElement) {
+        coinsCountElement.textContent = coinsCount;
+    }
+}
+
 // ==================== АУДИО СИСТЕМА ====================
 // Используем Web Audio API для качественных синтезированных звуков
 // и фоновой музыки из файла
