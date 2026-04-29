@@ -462,8 +462,10 @@ let gameRunning = false;
 let lastTime = 0;
 let animationId;
 let touchX = player.x;
+let touchY = player.y;
 let isTouching = false;
 let prevPlayerY = 400;   // Для отслеживания предыдущей позиции по Y
+let hasJumpedOnTouch = false; // Флаг: был ли прыжок выполнен при текущем касании
 
 // Система комбо для фруктов
 let fruitCombo = 0;              // Текущий множитель комбо
@@ -591,8 +593,8 @@ function convertFruitsToCoins() {
 function updatePhysics() {
     if (!gameRunning) return;
 
-    // Управление движением влево/вправо
-    if (isTouching) {
+    // Управление движением влево/вправо только после касания (палец водим)
+    if (isTouching && hasJumpedOnTouch) {
         const dx = touchX - (player.x + player.width / 2);
         player.x += dx * 0.15;
     }
@@ -980,6 +982,9 @@ function finishLevel(success) {
         scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
         
         // Фрукты сохраняются как бонус - не очищаем их при проигрыше
+        // Сохраняем текущие фрукты в localStorage, чтобы они не потерялись
+        persistentCollectedFruits = [...collectedFruitsArray];
+        localStorage.setItem('jumpSkok_fruits', JSON.stringify(persistentCollectedFruits));
     }
 
     setTimeout(() => {
@@ -1782,6 +1787,33 @@ function drawGameObjects() {
     ctx.fillStyle = 'black';
     ctx.beginPath(); ctx.arc(player.x+10, player.y+12, 2, 0, Math.PI*2); ctx.arc(player.x+20, player.y+12, 2, 0, Math.PI*2); ctx.fill();
     
+    // Отрисовка прозрачного круга под пальцем при касании (виртуальный джойстик)
+    if (isTouching) {
+        ctx.save();
+        // Полупрозрачный круг под пальцем
+        const gradient = ctx.createRadialGradient(touchX, touchY, 0, touchX, touchY, 40);
+        gradient.addColorStop(0, 'rgba(255, 255, 255, 0.3)');
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0.05)');
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(touchX, touchY, 40, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // Обводка круга
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(touchX, touchY, 40, 0, Math.PI * 2);
+        ctx.stroke();
+        
+        // Маленький круг в центре (точка касания)
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+        ctx.beginPath();
+        ctx.arc(touchX, touchY, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+    
     // Отрисовка индикатора комбо (визуальный эффект поверх игры)
     if (comboDisplay.active && fruitCombo > 1) {
         ctx.save();
@@ -1835,11 +1867,17 @@ function jump() {
 function handleInput(x, y) {
     if (!gameRunning) return;
     
-    // Прыгаем только если игрок на земле (стоит на платформе)
+    // При первом касании - прыжок и запоминание позиции
     isTouching = true;
     const rect = canvas.getBoundingClientRect();
     touchX = x - rect.left;
-    jump();
+    touchY = y - rect.top;
+    
+    // Прыгаем только если игрок на земле (стоит на платформе) и ещё не прыгали в этом касании
+    if (!hasJumpedOnTouch) {
+        jump();
+        hasJumpedOnTouch = true;
+    }
 }
 
 canvas.addEventListener('touchstart', e => {
@@ -1851,15 +1889,27 @@ canvas.addEventListener('touchmove', e => {
     e.preventDefault();
     if (!gameRunning) return;
     touchX = e.touches[0].clientX - canvas.getBoundingClientRect().left;
+    touchY = e.touches[0].clientY - canvas.getBoundingClientRect().top;
 }, {passive: false});
 
-canvas.addEventListener('touchend', () => isTouching = false);
+canvas.addEventListener('touchend', () => {
+    isTouching = false;
+    hasJumpedOnTouch = false;
+});
 
 canvas.addEventListener('mousedown', e => {
     handleInput(e.clientX, e.clientY);
 });
-canvas.addEventListener('mousemove', e => { if(isTouching) touchX = e.offsetX; });
-canvas.addEventListener('mouseup', () => isTouching = false);
+canvas.addEventListener('mousemove', e => { 
+    if(isTouching) {
+        touchX = e.offsetX;
+        touchY = e.offsetY;
+    }
+});
+canvas.addEventListener('mouseup', () => {
+    isTouching = false;
+    hasJumpedOnTouch = false;
+});
 
 // Добавляем поддержку клавиатуры (пробел для прыжка)
 document.addEventListener('keydown', e => {
