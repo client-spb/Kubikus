@@ -1028,7 +1028,8 @@ function generatePlatforms() {
     platforms = [];
     coins = [];
     // Стартовая платформа всегда безопасная (трава)
-    const startY = 500;
+    // Позиционируем платформу относительно высоты экрана - в верхней трети
+    const startY = Math.min(500, canvas.height * 0.6);
     platforms.push({ 
         x: 150, 
         y: startY, 
