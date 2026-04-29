@@ -915,10 +915,10 @@ function finishLevel(success) {
 
 function resetGameVariables(clearFruits = true) {
     player.x = canvas.width / 2 - 15;
-    // Герой появляется в верхней части экрана - платформы будут спускаться к нему
-    player.y = 100;
+    // Герой появляется выше всех платформ - будет падать вниз на первую платформу
+    player.y = -200;
     player.vy = 0;
-    prevPlayerY = 100;
+    prevPlayerY = -200;
     coinsCount = 0;
     scorePoints = 0;
     fruitScore = 0;
@@ -1051,8 +1051,9 @@ function generatePlatforms() {
     platforms = [];
     coins = [];
     // Стартовая платформа всегда безопасная (трава)
-    // Позиционируем платформу чуть выше экрана, чтобы она спускалась к игроку
-    const startY = -50;
+    // Позиционируем платформу чуть ниже игрока, чтобы он мог на неё приземлиться
+    // Игрок появляется на y = -200, поэтому платформа должна быть примерно на y = -100
+    const startY = -100;
     platforms.push({ 
         x: 150, 
         y: startY, 
