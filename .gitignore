@@ -39,7 +39,7 @@ coverage/
 htmlcov/
 .coverage
 
-# Compressed files
+# Common compressed files
 *.zip
 *.gz
 *.tar
@@ -63,6 +63,141 @@ htmlcov/
 *.tar.xz
 *.tar.zst
 
-# Cache directories
+# Python specific
+*.pyo
+*.pyd
+.Python
+*.so
+*.egg-info/
+.eggs/
+
+# JavaScript/Node specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Java specific
+*.class
+*.jar
+*.war
+*.ear
+hs_err_pid*
+
+# C/C++ specific
+*.o
+*.a
+*.dylib
+*.dll
+*.so
+
+# Go specific
+*.o
+*.a
+*.swp
+*~
+.DS_Store
+.svn/
+.CVS/
+
+# Ruby specific
+*.gem
+*.rbc
+*.sassc
+.cache
+.rake_tasks
+~*
+*.log
+.DS_Store
+public/system/
+vendor/bundle/
+.bundle/
+.rbenv-vars
+
+# Rust specific
+target/
+*.rs.bk
+Cargo.lock
+
+# Julia specific
+julia-*/
+.JuliaUserPrefs.toml
+
+# Zig specific
+zig-out/
+zig-cache/
+
+# MyPy cache
 .mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pytest cache
 .pytest_cache/
+
+# Coverage reports
+coverage.xml
+*.cover
+.hypothesis/
+
+# Distribution / packaging
+.Python
+*.egg
+MANIFEST
+
+# IDEs
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Environment variables
+.env
+.envrc
+!.env.example
+!.env.sample
+!.env.local.example
+!.env.local.sample
+.env.*
+!*.env.example
+!*.env.sample
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Icon?
+Network Trash Folder
+Temporary Items
+.metadata
+*/
+
+# Testing
+.pytest_cache/
+.nyc_output/
+coverage/
+.coverage.*
+
+# CI/CD
+.github/
+.gitlab/
+.travis.yml
+.circleci/
+.drone.yml
+.semaphore/
+.codeclimate.yml
+.wercker/
+.shipit.yml
+.reviewboardrc
+.mergify/
+.lgtm/
+.codacy-coverage.yml
+.dependabot/
+
+# Documentation
+docs/_build/
+sphinx_*/
