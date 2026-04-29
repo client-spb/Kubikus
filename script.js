@@ -635,13 +635,18 @@ function updatePhysics() {
         
         // Респаун платформ, ушедших за экран
         if (p.y > canvas.height) {
-            // Находим самую верхнюю платформу на экране (с минимальным y)
-            let highestY = canvas.height;
+            // Находим самую верхнюю платформу (с минимальным y) среди ВСЕХ платформ
+            let highestY = Infinity;
             platforms.forEach(plat => {
-                if (plat.y < canvas.height && plat.y < highestY) {
+                if (plat.y < highestY) {
                     highestY = plat.y;
                 }
             });
+            
+            // Если это первый респаун и highestY ещё не установлен, используем верх экрана
+            if (highestY === Infinity || highestY > canvas.height) {
+                highestY = 0;
+            }
             
             // Новая платформа появляется выше самой верхней с фиксированным шагом
             const verticalGap = 90; // Фиксированный шаг как при генерации
