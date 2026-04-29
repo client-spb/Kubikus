@@ -152,6 +152,13 @@ function clearLevelsStorage() {
     alert('🗺 Уровни сброшены!\nТеперь открыт только уровень 1.');
 }
 
+function clearFruitsStorage() {
+    localStorage.removeItem('jumpSkok_fruits');
+    persistentCollectedFruits = [];
+    collectedFruitsArray = [];
+    alert('🍎 Фрукты сброшены!\nБонусные фрукты очищены.');
+}
+
 // Функция обновления отображения валюты (для правого верхнего угла)
 function updateCurrencyDisplay() {
     if (coinsCountElement) {
@@ -531,6 +538,8 @@ function convertFruitsToCoins() {
                 collectedFruitsCount -= fruitsToConvert;
                 persistentCollectedFruits = [...collectedFruitsArray];
                 collectedFruitsArray = [];
+                // Сохраняем оставшиеся фрукты после конвертации
+                localStorage.setItem('jumpSkok_fruits', JSON.stringify(persistentCollectedFruits));
                 isConvertingFruits = false;
                 updateHUD();
                 updateFruitsDisplay();
@@ -947,8 +956,9 @@ function finishLevel(success) {
         localStorage.setItem('jumpSkok_coins', coinsCount);
         localStorage.setItem('jumpSkok_score', scorePoints + fruitScore);
         
-        // Сохраняем собранные фрукты для следующего уровня
+        // Сохраняем собранные фрукты для следующего уровня (и после смерти тоже)
         persistentCollectedFruits = [...collectedFruitsArray];
+        localStorage.setItem('jumpSkok_fruits', JSON.stringify(persistentCollectedFruits));
     } else {
         playTone('die');
         endStatus.textContent = "НЕУДАЧА";
@@ -969,9 +979,7 @@ function finishLevel(success) {
         coinsCount = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
         scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
         
-        // При проигрыше очищаем все фрукты
-        persistentCollectedFruits = [];
-        collectedFruitsArray = [];
+        // Фрукты сохраняются как бонус - не очищаем их при проигрыше
     }
 
     setTimeout(() => {
@@ -991,6 +999,11 @@ function resetGameVariables(clearFruits = true) {
     // Загружаем сохранённые очки и монеты из localStorage
     coinsCount = parseInt(localStorage.getItem('jumpSkok_coins')) || 0;
     scorePoints = parseInt(localStorage.getItem('jumpSkok_score')) || 0;
+    
+    // Загружаем сохранённые фрукты (бонус, который не теряется при смерти)
+    const savedFruits = JSON.parse(localStorage.getItem('jumpSkok_fruits') || '[]');
+    persistentCollectedFruits = savedFruits;
+    
     fruitScore = 0;
     levelCoins = 0;  // Сбрасываем монеты уровня при старте
     gameTime = 0;
@@ -1004,8 +1017,7 @@ function resetGameVariables(clearFruits = true) {
     
     // Очищаем или сохраняем фрукты в зависимости от параметра
     if (clearFruits) {
-        collectedFruitsArray = []; // Очищаем массив собранных фруктов для отображения
-        persistentCollectedFruits = []; // Очищаем сохранённые фрукты (при проигрыше)
+        collectedFruitsArray = [...persistentCollectedFruits]; // Загружаем сохранённые фрукты
     } else {
         // При переходе на следующий уровень сохраняем фрукты
         collectedFruitsArray = [...persistentCollectedFruits];
@@ -1057,6 +1069,7 @@ function updateHUD() {
 // Функция добавления собранного фрукта в массив для отображения
 function addCollectedFruit(fruitType) {
     collectedFruitsArray.push(fruitType);
+    persistentCollectedFruits = [...collectedFruitsArray]; // Синхронизируем с сохраняемым массивом
     updateFruitsDisplay();
 }
 
@@ -1516,6 +1529,9 @@ function gameLoop(timestamp) {
             
             f.collected = true;
             collectedFruitsCount++; // Увеличиваем счётчик собранных фруктов
+            
+            // Сохраняем фрукты сразу после сбора (бонус не теряется при смерти)
+            localStorage.setItem('jumpSkok_fruits', JSON.stringify(persistentCollectedFruits));
             
             // Добавляем фрукт в список собранных для отображения внизу слева
             addCollectedFruit(f.type);
