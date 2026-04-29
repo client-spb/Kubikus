@@ -465,7 +465,6 @@ let touchX = player.x;
 let touchY = player.y;
 let isTouching = false;
 let prevPlayerY = 400;   // Для отслеживания предыдущей позиции по Y
-let hasJumpedOnTouch = false; // Флаг: был ли прыжок выполнен при текущем касании
 
 // Система комбо для фруктов
 let fruitCombo = 0;              // Текущий множитель комбо
@@ -594,7 +593,7 @@ function updatePhysics() {
     if (!gameRunning) return;
 
     // Управление движением влево/вправо только после касания (палец водим)
-    if (isTouching && hasJumpedOnTouch) {
+    if (isTouching) {
         const dx = touchX - (player.x + player.width / 2);
         player.x += dx * 0.15;
     }
@@ -1873,10 +1872,9 @@ function handleInput(x, y) {
     touchX = x - rect.left;
     touchY = y - rect.top;
     
-    // Прыгаем только если игрок на земле (стоит на платформе) и ещё не прыгали в этом касании
-    if (!hasJumpedOnTouch) {
+    // Прыгаем только если игрок на земле (стоит на платформе)
+    if (player.onGround) {
         jump();
-        hasJumpedOnTouch = true;
     }
 }
 
@@ -1894,7 +1892,6 @@ canvas.addEventListener('touchmove', e => {
 
 canvas.addEventListener('touchend', () => {
     isTouching = false;
-    hasJumpedOnTouch = false;
 });
 
 canvas.addEventListener('mousedown', e => {
@@ -1908,7 +1905,6 @@ canvas.addEventListener('mousemove', e => {
 });
 canvas.addEventListener('mouseup', () => {
     isTouching = false;
-    hasJumpedOnTouch = false;
 });
 
 // Добавляем поддержку клавиатуры (пробел для прыжка)
