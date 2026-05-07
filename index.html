@@ -26,25 +26,25 @@
     
     <!-- Разделённые счётчики: монеты для магазина и очки для лидеров -->
     <!-- Верхняя левая панель: очки и монеты -->
-    <div id="top-left-hud" style="position: absolute; top: 10px; left: 10px; background: rgba(71, 157, 255, 0.678); padding: 8px 12px; border-radius: 8px; color: #fff; font-weight: bold; font-family: 'Nunito', sans-serif; display: none; z-index: 10;">
+    <div id="top-left-hud" class="hud-card">
         <div id="score-points-display">⭐ 0</div>
-        <div id="coins-display" style="color: #FFD700;">🪙 0</div>
+        <div id="coins-display" class="hud-coins">🪙 0</div>
     </div>
     
     <!-- Верхняя центральная панель: задание уровня -->
-    <div id="top-center-hud" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: linear-gradient(135deg, rgba(255, 107, 107, 0.95), rgba(254, 202, 87, 0.95)); padding: 10px 25px; border-radius: 25px; color: #fff; font-weight: 800; font-family: 'Nunito', sans-serif; display: none; z-index: 10; box-shadow: 0 8px 32px rgba(255, 107, 107, 0.4); letter-spacing: 0.5px; text-shadow: 0 2px 4px rgba(0,0,0,0.2);">
+    <div id="top-center-hud" class="hud-goal">
         <span id="level-goal-text">Цель: 0/20</span>
     </div>
     
     <!-- Верхняя правая панель: кнопка паузы -->
-    <button id="pause-btn" style="position: absolute; top: 10px; right: 10px; width: 44px; height: 44px; border-radius: 50%; border: none; background: linear-gradient(135deg, #6c5ce7, #a29bfe); color: white; font-size: 20px; cursor: pointer; display: none; z-index: 10; box-shadow: 0 4px 15px rgba(108, 92, 231, 0.4);" onclick="togglePause()">⏸️</button>
+    <button id="pause-btn" onclick="togglePause()">⏸️</button>
     
     <!-- Нижняя левая панель: собранные фрукты -->
-    <div id="fruits-collected-hud" style="position: absolute; bottom: 10px; left: 10px; background: rgba(255, 238, 141, 0); padding: 8px 12px; border-radius: 8px; color: #fff; font-weight: bold; font-family: 'Nunito', sans-serif; display: none; z-index: 10; min-width: 80px;">
-        <div id="fruits-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+    <div id="fruits-collected-hud" class="hud-fruits">
+        <div id="fruits-list"></div>
     </div>
     
-    <div id="currency-display" style="position: absolute; top: 50px; right: 10px; background: rgba(0,0,0,0.6); padding: 8px 12px; border-radius: 8px; color: #FFD700; font-weight: bold; font-family: 'Nunito', sans-serif; display: none; z-index: 10;">
+    <div id="currency-display" class="hud-currency">
         🪙 <span id="coins-count">0</span>
     </div>
     <canvas id="game" width="400" height="600"></canvas>
@@ -101,11 +101,11 @@
             </div>
             
             <!-- Отладочная панель -->
-            <div class="debug-panel" style="margin-top: 20px; padding: 10px; background: rgba(0,0,0,0.3); border-radius: 8px;">
-                <div style="color: #fff; font-size: 12px; margin-bottom: 8px; font-weight: 600;">🔧 ОТЛАДКА</div>
-                <button class="menu-btn btn-back" style="width: 100%; margin-bottom: 5px; font-size: 12px; padding: 8px;" onclick="clearCoinsStorage()">💰 Сбросить монеты</button>
-                <button class="menu-btn btn-back" style="width: 100%; margin-bottom: 5px; font-size: 12px; padding: 8px;" onclick="clearLevelsStorage()">🗺 Сбросить уровни</button>
-                <button class="menu-btn btn-back" style="width: 100%; font-size: 12px; padding: 8px;" onclick="clearFruitsStorage()">🍎 Сбросить фрукты</button>
+            <div class="debug-panel">
+                <div class="debug-title">🔧 ОТЛАДКА</div>
+                <button class="menu-btn btn-back debug-btn" onclick="clearCoinsStorage()">💰 Сбросить монеты</button>
+                <button class="menu-btn btn-back debug-btn" onclick="clearLevelsStorage()">🗺 Сбросить уровни</button>
+                <button class="menu-btn btn-back debug-btn" onclick="clearFruitsStorage()">🍎 Сбросить фрукты</button>
             </div>
         </div>
     </div>
@@ -114,13 +114,13 @@
     <div id="levelSelect" class="screen hidden">
         <div class="world-map-title">КАРТА МИРОВ</div>
         <div id="levels-grid"></div>
-        <button class="menu-btn btn-back" style="width: 200px;" onclick="toMainMenu()">⬅ НАЗАД</button>
+        <button class="menu-btn btn-back nav-back-btn" onclick="toMainMenu()">⬅ НАЗАД</button>
     </div>
 
     <!-- ПРЕВЬЮ УРОВНЯ -->
     <div id="levelPreview" class="screen hidden">
         <div class="menu-panel">
-            <h2 id="prevTitle" style="margin:0; color:#333; font-weight:900;">Уровень 1</h2>
+            <h2 id="prevTitle" class="preview-title">Уровень 1</h2>
             <div id="prevIcon" class="preview-icon">🪙</div>
             <div class="level-difficulty">⭐ Сложность: <span id="prevDiff">Легко</span></div>
             <div id="prevDesc" class="level-desc">Описание...</div>
@@ -133,7 +133,7 @@
     <!-- GAME OVER -->
     <div id="gameOverScreen" class="screen hidden">
         <div class="menu-panel">
-            <h1 class="game-title" style="font-size: 28px;">🎯 ФИНИШ</h1>
+            <h1 class="game-title finish-title">🎯 ФИНИШ</h1>
             <div id="endStatus" class="status-msg">Результат</div>
             <div class="final-score" id="finalScoreValue">0</div>
 

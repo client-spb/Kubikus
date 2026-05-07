@@ -1004,3 +1004,25 @@ canvas {
         font-size: 14px;
     }
 }
+
+
+/* --- UI polish cleanup --- */
+.hud-card, #top-center-hud, #pause-btn, .hud-fruits, .hud-currency {
+  font-family: "Nunito", sans-serif;
+  backdrop-filter: blur(8px);
+}
+.hud-card{position:absolute;top:12px;left:12px;padding:10px 14px;border-radius:14px;background:linear-gradient(135deg,rgba(32,74,135,.82),rgba(77,135,222,.82));color:#fff;font-weight:800;display:none;z-index:10;box-shadow:0 10px 24px rgba(5,16,38,.25);border:1px solid rgba(255,255,255,.25)}
+.hud-coins{color:#ffd76f}
+.hud-goal{position:absolute;top:12px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:999px;color:#fff;font-weight:800;display:none;z-index:10;box-shadow:0 10px 28px rgba(255,107,107,.35);letter-spacing:.4px;text-shadow:0 2px 4px rgba(0,0,0,.25);background:linear-gradient(135deg,rgba(255,107,107,.94),rgba(254,202,87,.94));border:1px solid rgba(255,255,255,.35)}
+#pause-btn{position:absolute;top:12px;right:12px;width:46px;height:46px;border:none;border-radius:50%;background:linear-gradient(135deg,#5e56d8,#8d89ef);color:#fff;font-size:19px;cursor:pointer;display:none;z-index:10;box-shadow:0 8px 20px rgba(67,58,177,.38);transition:transform .15s ease,filter .2s ease}
+#pause-btn:hover{transform:translateY(-1px);filter:brightness(1.05)}
+.hud-fruits{position:absolute;bottom:12px;left:12px;min-width:110px;padding:10px 12px;border-radius:14px;background:linear-gradient(135deg,rgba(21,36,59,.62),rgba(55,73,102,.62));color:#fff;font-weight:700;display:none;z-index:10;border:1px solid rgba(255,255,255,.2)}
+#fruits-list{display:flex;flex-direction:column;gap:4px}
+.hud-currency{position:absolute;top:66px;right:12px;padding:10px 12px;border-radius:12px;background:rgba(17,20,37,.68);color:#ffd76f;font-weight:800;display:none;z-index:10;border:1px solid rgba(255,255,255,.14)}
+.debug-panel{margin-top:18px;padding:12px;border-radius:12px;background:rgba(34,42,71,.55);border:1px solid rgba(255,255,255,.22)}
+.debug-title{color:#fff;font-size:12px;margin-bottom:8px;font-weight:700;letter-spacing:.4px}
+.debug-btn{width:100%;font-size:12px;padding:8px;margin-bottom:6px}
+.debug-btn:last-child{margin-bottom:0}
+.nav-back-btn{width:200px}
+.preview-title{margin:0;color:#2a2a2a;font-weight:900}
+.finish-title{font-size:28px}
